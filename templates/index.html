@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Cheval</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <h1>🐴 Planning de Perfect for me</h1>
+        <div>
+            <a href="/stats.html" class="btn">Statistiques</a>
+            <a href="/cavaliers.html" class="btn">Gérer les cavaliers</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="calendar-header">
+            <button id="prevMonth">←</button>
+            <h2 id="monthYear"></h2>
+            <button id="nextMonth">→</button>
+        </div>
+
+        <div id="calendar" class="calendar"></div>
+    </div>
+
+    <!-- Modal pour gérer un jour -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <h3 id="modalDate"></h3>
+
+            <!-- Type de travail -->
+            <div class="work-type-section">
+                <h4>Type de travail</h4>
+                <select id="workTypeSelect">
+                    <option value="">-- Non spécifié --</option>
+                    <option value="longe">💫 Longe</option>
+                    <option value="liberte">🐎 Liberté</option>
+                    <option value="repos">💤 Repos</option>
+                    <option value="plat">🎠 Dressage</option>
+                    <option value="cso">🚧 CSO</option>
+                    <option value="balade">🌳 Balade</option>
+                    <option value="tap">🥕 TAP</option>
+                </select>
+            </div>
+
+            <!-- Liste des cavaliers déjà assignés -->
+            <div id="assignedCavaliers" class="assigned-cavaliers"></div>
+
+            <!-- Boutons pour ajouter un cavalier -->
+            <div class="add-cavalier-section">
+                <h4>Ajouter un cavalier</h4>
+                <div id="cavalierButtons" class="cavalier-buttons"></div>
+            </div>
+
+            <!-- Commentaire -->
+            <div class="comment-section">
+                <h4>Commentaire</h4>
+                <textarea id="commentText" placeholder="Ajouter un commentaire..."></textarea>
+                <button id="saveCommentBtn" class="btn">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

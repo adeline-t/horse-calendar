@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Cavaliers</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <h1>🐴 Gestion des Cavaliers</h1>
+        <a href="/" class="btn">Retour au planning</a>
+    </nav>
+
+    <div class="container">
+        <div class="cavalier-form">
+            <h2>Ajouter un cavalier</h2>
+            <div class="form-row">
+                <input type="text" id="cavalierName" placeholder="Nom du cavalier">
+                <input type="color" id="cavalierColor" value="#667eea" title="Choisir une couleur">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date de début (optionnel)</label>
+                    <input type="date" id="cavalierStartDate">
+                </div>
+                <div class="form-group">
+                    <label>Date de fin (optionnel)</label>
+                    <input type="date" id="cavalierEndDate">
+                </div>
+            </div>
+            <button id="addCavalierBtn" class="btn">Ajouter</button>
+        </div>
+
+        <div class="cavalier-list">
+            <h2>Liste des cavaliers</h2>
+            <ul id="cavaliersList"></ul>
+        </div>
+    </div>
+
+    <!-- Modal pour éditer les dates -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-edit">×</span>
+            <h3>Modifier <span id="editCavalierName"></span></h3>
+
+            <div class="form-group">
+                <label>Date de début</label>
+                <input type="date" id="editStartDate">
+                <button class="btn-clear" onclick="document.getElementById('editStartDate').value = ''">Effacer</button>
+            </div>
+
+            <div class="form-group">
+                <label>Date de fin</label>
+                <input type="date" id="editEndDate">
+                <button class="btn-clear" onclick="document.getElementById('editEndDate').value = ''">Effacer</button>
+            </div>
+
+            <div class="modal-actions">
+                <button id="saveEditBtn" class="btn">Enregistrer</button>
+                <button id="cancelEditBtn" class="btn btn-secondary">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='cavaliers.js') }}"></script>
+</body>
+</html>
