@@ -1,4 +1,3 @@
-import gunicorn
 from flask import Flask
 from config import Config
 from services.data_service import DataService
@@ -25,16 +24,16 @@ def create_app():
 
     return app
 
+# Créer l'instance app pour Gunicorn
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
+    print("🐴 Serveur démarré sur http://localhost:5000")
+    print("📊 Statistiques disponibles sur http://localhost:5000/stats.html")
+    print("👥 Gestion cavaliers sur http://localhost:5000/cavaliers.html")
 
-    print("🐴 Serveur démarré sur http://localhost:4000")
-    print("📊 Statistiques disponibles sur http://localhost:4000/stats.html")
-    print("👥 Gestion cavaliers sur http://localhost:4000/cavaliers.html")
-
-   # app.run(
-   #     debug=Config.DEBUG,
-   #     host=Config.HOST,
-   #     port=Config.PORT
-   # )
-   # gunicorn -w 4 -b 0.0.0.0:8000 app:app
+    app.run(
+        debug=Config.DEBUG,
+        host=Config.HOST,
+        port=Config.PORT
+    )
