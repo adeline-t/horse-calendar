@@ -2,39 +2,68 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planning Cheval</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planning Cheval - Perfect for me</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐴</text></svg>">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Planning Cheval">
 </head>
 <body>
+    <!-- Navigation -->
     <nav>
-        <h1>🐴 Planning de Perfect for me</h1>
-        <div>
-            <a href="/stats.html" class="btn">Statistiques</a>
-            <a href="/cavaliers.html" class="btn">Gérer les cavaliers</a>
+        <h1>
+            <span class="nav-title-full">🐴 Planning de Perfect for me</span>
+            <span class="nav-title-short">🐴 Planning</span>
+        </h1>
+        <div class="nav-buttons">
+            <a href="/stats.html" class="btn btn-nav">
+                <span class="btn-icon">📊</span>
+                <span class="btn-text">Statistiques</span>
+            </a>
+            <a href="/cavaliers.html" class="btn btn-nav">
+                <span class="btn-icon">👥</span>
+                <span class="btn-text">Cavaliers</span>
+            </a>
         </div>
     </nav>
 
+    <!-- Container principal -->
     <div class="container">
         <div class="calendar-header">
-            <button id="prevMonth">←</button>
-            <h2 id="monthYear"></h2>
-            <button id="nextMonth">→</button>
+            <button id="prevMonth" class="calendar-nav-btn" aria-label="Mois précédent">
+                <span class="nav-arrow">←</span>
+            </button>
+            <h2 id="monthYear" class="calendar-title"></h2>
+            <button id="nextMonth" class="calendar-nav-btn" aria-label="Mois suivant">
+                <span class="nav-arrow">→</span>
+            </button>
         </div>
 
+        <!-- Calendrier (les en-têtes des jours et les cases sont générés par JS) -->
         <div id="calendar" class="calendar"></div>
+
+        <!-- Légende mobile optionnelle -->
+        <div class="calendar-legend">
+            <p class="legend-hint">💡 Cliquez sur un jour pour gérer le planning</p>
+        </div>
     </div>
 
     <!-- Modal pour gérer un jour -->
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close">×</span>
-            <h3 id="modalDate"></h3>
+    <div id="modal" class="modal" aria-hidden="true">
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalDate">
+            <button class="close" aria-label="Fermer">×</button>
+            <h3 id="modalDate" class="modal-title"></h3>
 
             <!-- Type de travail -->
-            <div class="work-type-section">
-                <h4>Type de travail</h4>
-                <select id="workTypeSelect">
+            <section class="work-type-section">
+                <h4>
+                    <span class="section-icon">💪</span>
+                    Type de travail
+                </h4>
+                <select id="workTypeSelect" class="work-type-select" aria-label="Type de travail">
                     <option value="">-- Non spécifié --</option>
                     <option value="longe">💫 Longe</option>
                     <option value="liberte">🐎 Liberté</option>
@@ -44,25 +73,72 @@
                     <option value="balade">🌳 Balade</option>
                     <option value="tap">🥕 TAP</option>
                 </select>
-            </div>
+            </section>
 
-            <!-- Liste des cavaliers déjà assignés -->
-            <div id="assignedCavaliers" class="assigned-cavaliers"></div>
+            <!-- Cavaliers assignés -->
+            <section class="assigned-cavaliers">
+                <h4>
+                    <span class="section-icon">✅</span>
+                    Cavaliers assignés
+                    <span id="assignedCount" class="count-badge">0</span>
+                </h4>
+                <div id="assignedCavaliers" class="assigned-cavaliers-list" aria-live="polite">
+                    <p class="empty-message">Aucun cavalier assigné</p>
+                </div>
+            </section>
 
-            <!-- Boutons pour ajouter un cavalier -->
-            <div class="add-cavalier-section">
-                <h4>Ajouter un cavalier</h4>
-                <div id="cavalierButtons" class="cavalier-buttons"></div>
-            </div>
+            <!-- Ajouter des cavaliers -->
+            <section class="add-cavalier-section">
+                <h4>
+                    <span class="section-icon">➕</span>
+                    Ajouter un cavalier
+                </h4>
+                <div id="cavalierButtons" class="cavalier-buttons">
+                    <!-- Généré par JS -->
+                </div>
+            </section>
 
             <!-- Commentaire -->
-            <div class="comment-section">
-                <h4>Commentaire</h4>
-                <textarea id="commentText" placeholder="Ajouter un commentaire..."></textarea>
-                <button id="saveCommentBtn" class="btn">Enregistrer</button>
+            <section class="comment-section">
+                <h4>
+                    <span class="section-icon">📝</span>
+                    Commentaire
+                </h4>
+                <textarea
+                    id="commentText"
+                    class="comment-textarea"
+                    placeholder="Ajouter un commentaire sur la séance..."
+                    rows="4"
+                    maxlength="500"
+                    aria-label="Commentaire"
+                ></textarea>
+                <div class="comment-actions">
+                    <button id="saveCommentBtn" class="btn btn-primary">
+                        💾 Enregistrer
+                    </button>
+                    <button id="clearCommentBtn" class="btn btn-secondary">
+                        🗑️ Effacer
+                    </button>
+                </div>
+                <div class="char-counter">
+                    <span id="charCount">0</span>/500 caractères
+                </div>
+            </section>
+
+            <div class="modal-actions">
+                <button id="closeModalBtn" class="btn btn-close" aria-label="Fermer la fenêtre">Fermer</button>
             </div>
         </div>
     </div>
+
+    <!-- Loading indicator -->
+    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+        <div class="spinner"></div>
+        <p>Chargement...</p>
+    </div>
+
+    <!-- Toast notifications -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

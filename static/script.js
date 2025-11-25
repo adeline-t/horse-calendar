@@ -3,11 +3,22 @@ let currentDate = new Date();
 let selectedDate = null;
 let allAssignments = {};
 let allCavaliers = [];
+let colorByName = new Map(); // map nom -> couleur
 
-// Initialisation
+// ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    setupEventListeners();
     loadData();
+});
 
+function initializeApp() {
+    if ('ontouchstart' in window) {
+        document.body.classList.add('touch-device');
+    }
+}
+
+function setupEventListeners() {
     document.getElementById('prevMonth').addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
         renderCalendar();
@@ -18,51 +29,78 @@ document.addEventListener('DOMContentLoaded', function() {
         renderCalendar();
     });
 
-    // Modal
     const modal = document.getElementById('modal');
     const closeBtn = document.querySelector('.close');
+    const closeModalBtn = document.getElementById('closeModalBtn');
 
-    closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-    });
+    if (closeBtn) closeBtn.addEventListener('click', () => closeModal());
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => closeModal());
 
     window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
+        if (e.target === modal) closeModal();
     });
 
-    // Bouton enregistrer commentaire
-    document.getElementById('saveCommentBtn').addEventListener('click', saveComment);
+    const commentText = document.getElementById('commentText');
+    const charCount = document.getElementById('charCount');
+    const saveCommentBtn = document.getElementById('saveCommentBtn');
+    const clearCommentBtn = document.getElementById('clearCommentBtn');
 
-    // Change work type
-    document.getElementById('workTypeSelect').addEventListener('change', saveWorkType);
-});
+    if (commentText && charCount) {
+        commentText.addEventListener('input', () => {
+            charCount.textContent = commentText.value.length;
+        });
+    }
 
+    if (saveCommentBtn) saveCommentBtn.addEventListener('click', saveComment);
+
+    if (clearCommentBtn) {
+        clearCommentBtn.addEventListener('click', () => {
+            if (commentText) commentText.value = '';
+            if (charCount) charCount.textContent = '0';
+        });
+    }
+
+    const workTypeSelect = document.getElementById('workTypeSelect');
+    if (workTypeSelect) {
+        workTypeSelect.addEventListener('change', saveWorkType);
+    }
+
+    window.addEventListener('resize', debounce(() => {
+        renderCalendar();
+    }, 250));
+}
+
+// ===== CHARGEMENT DES DONNÉES =====
 async function loadData() {
-    await loadCavaliers();
-    await loadAssignments();
+    showLoading();
+    try {
+        await loadCavaliers();
+        await loadAssignments();
+    } catch (error) {
+        console.error('Erreur lors du chargement des données:', error);
+        showToast('❌ Erreur de chargement des données');
+    } finally {
+        hideLoading();
+    }
 }
 
 async function loadCavaliers() {
-    try {
-        const response = await fetch(API_URL + '/cavaliers');
-        allCavaliers = await response.json();
-    } catch (error) {
-        console.error('Erreur lors du chargement des cavaliers:', error);
-    }
+    const resp = await fetch(API_URL + '/cavaliers');
+    if (!resp.ok) throw new Error('Erreur réseau cavaliers');
+    allCavaliers = await resp.json();
+
+    // Construire la map nom->couleur
+    colorByName = new Map(allCavaliers.map(c => [c.name, c.color]));
 }
 
 async function loadAssignments() {
-    try {
-        const response = await fetch(API_URL + '/assignments');
-        allAssignments = await response.json();
-        renderCalendar();
-    } catch (error) {
-        console.error('Erreur lors du chargement des assignations:', error);
-    }
+    const resp = await fetch(API_URL + '/assignments');
+    if (!resp.ok) throw new Error('Erreur réseau assignments');
+    allAssignments = await resp.json();
+    renderCalendar();
 }
 
+// ===== UTILITAIRES =====
 function getDateKey(year, month, day) {
     const monthNum = month + 1;
     const monthStr = monthNum < 10 ? '0' + monthNum : '' + monthNum;
@@ -70,9 +108,8 @@ function getDateKey(year, month, day) {
     return year + '-' + monthStr + '-' + dayStr;
 }
 
-function getCavalierColor(cavalierName) {
-    const cavalier = allCavaliers.find(c => c.name === cavalierName);
-    return cavalier ? cavalier.color : '#667eea';
+function getCavalierColor(name) {
+    return colorByName.get(name) || '#667eea';
 }
 
 function getWorkTypeIcon(workType) {
@@ -100,6 +137,15 @@ function getWorkTypeLabel(workType) {
     };
     return labels[workType] || workType;
 }
+
+function truncateName(name, maxLength = 12) {
+    if (window.innerWidth <= 600 && name.length > maxLength) {
+        return name.substring(0, maxLength - 2) + '..';
+    }
+    return name;
+}
+
+// ===== RENDU DU CALENDRIER =====
 function renderCalendar() {
     const calendar = document.getElementById('calendar');
     const monthYear = document.getElementById('monthYear');
@@ -111,22 +157,32 @@ function renderCalendar() {
                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     monthYear.textContent = months[month] + ' ' + year;
 
+    // Vider le calendrier et (re)générer les en-têtes (Lun..Dim)
     calendar.innerHTML = '';
-
-    const dayHeaders = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    dayHeaders.forEach(day => {
-        const header = document.createElement('div');
-        header.className = 'day-header';
-        header.textContent = day;
-        calendar.appendChild(header);
+    const headers = [
+        { full: 'Lundi', short: 'Lun' },
+        { full: 'Mardi', short: 'Mar' },
+        { full: 'Mercredi', short: 'Mer' },
+        { full: 'Jeudi', short: 'Jeu' },
+        { full: 'Vendredi', short: 'Ven' },
+        { full: 'Samedi', short: 'Sam' },
+        { full: 'Dimanche', short: 'Dim' }
+    ];
+    headers.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'day-header';
+        div.innerHTML = `<span class="day-full">${h.full}</span><span class="day-short">${h.short}</span>`;
+        calendar.appendChild(div);
     });
 
+    // Calcul des jours
     const firstDay = new Date(year, month, 1);
     let startDay = firstDay.getDay();
     startDay = startDay === 0 ? 6 : startDay - 1;
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+    // Jours du mois précédent
     let prevMonth = month - 1;
     let prevYear = year;
     if (prevMonth < 0) {
@@ -139,10 +195,12 @@ function renderCalendar() {
         createDayElement(prevMonthDays - i, true, prevYear, prevMonth);
     }
 
+    // Jours du mois courant
     for (let day = 1; day <= daysInMonth; day++) {
         createDayElement(day, false, year, month);
     }
 
+    // Jours du mois suivant
     let nextMonth = month + 1;
     let nextYear = year;
     if (nextMonth > 11) {
@@ -186,31 +244,35 @@ function createDayElement(day, isOtherMonth, year, month) {
             assignments.cavaliers.forEach((cavalier, index) => {
                 const badge = document.createElement('div');
                 badge.className = 'cavalier-badge';
-                badge.style.backgroundColor = getCavalierColor(cavalier);
+                badge.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
 
                 const nameSpan = document.createElement('span');
-                nameSpan.textContent = cavalier;
+                nameSpan.textContent = truncateName(cavalier);
+                nameSpan.title = cavalier;
                 badge.appendChild(nameSpan);
 
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'remove-btn';
-                removeBtn.textContent = '×';
-                removeBtn.onclick = function(event) {
-                    event.stopPropagation();
-                    removeCavalierFromDay(dateKey, index);
-                };
-                badge.appendChild(removeBtn);
+                if (window.innerWidth > 600) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.setAttribute('aria-label', `Retirer ${cavalier}`);
+                    removeBtn.textContent = '×';
+                    removeBtn.onclick = function(event) {
+                        event.stopPropagation();
+                        removeCavalierFromDay(dateKey, index);
+                    };
+                    badge.appendChild(removeBtn);
+                }
 
                 dayDiv.appendChild(badge);
             });
         }
 
         // Indicateur commentaire
-        if (assignments.comment) {
+        if (assignments.comment && assignments.comment.trim() !== '') {
             const commentIndicator = document.createElement('div');
-            commentIndicator.style.fontSize = '12px';
-            commentIndicator.style.marginTop = '5px';
+            commentIndicator.className = 'comment-indicator';
             commentIndicator.textContent = '💬';
+            commentIndicator.title = 'Commentaire disponible';
             dayDiv.appendChild(commentIndicator);
         }
     }
@@ -224,6 +286,7 @@ function createDayElement(day, isOtherMonth, year, month) {
     calendar.appendChild(dayDiv);
 }
 
+// ===== MODAL =====
 async function openModal(day, month, year) {
     const modal = document.getElementById('modal');
     const modalDate = document.getElementById('modalDate');
@@ -231,52 +294,66 @@ async function openModal(day, month, year) {
     selectedDate = getDateKey(year, month, day);
 
     const date = new Date(year, month, day);
-    modalDate.textContent = date.toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    modalDate.textContent = date.toLocaleDateString('fr-FR', options);
 
-    // Charger le type de travail
     const workTypeSelect = document.getElementById('workTypeSelect');
-    workTypeSelect.value = allAssignments[selectedDate]?.work_type || '';
+    if (workTypeSelect) {
+        workTypeSelect.value = allAssignments[selectedDate]?.work_type || '';
+    }
 
-    // Charger le commentaire
     const commentText = document.getElementById('commentText');
-    commentText.value = allAssignments[selectedDate]?.comment || '';
+    const charCount = document.getElementById('charCount');
+    if (commentText) {
+        const comment = allAssignments[selectedDate]?.comment || '';
+        commentText.value = comment;
+        if (charCount) charCount.textContent = comment.length;
+    }
 
     displayAssignedCavaliers();
     await loadCavalierButtons();
 
     modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
 }
 
+function closeModal() {
+    const modal = document.getElementById('modal');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+// ===== CAVALIERS BUTTONS =====
 async function loadCavalierButtons() {
     try {
-        // Récupérer les cavaliers actifs pour la date sélectionnée
         const response = await fetch(API_URL + '/cavaliers/active?date=' + selectedDate);
-        const cavaliers = await response.json();
+        if (!response.ok) throw new Error('Erreur réseau');
 
+        const cavaliers = await response.json();
         const buttonsDiv = document.getElementById('cavalierButtons');
         buttonsDiv.innerHTML = '';
 
         if (cavaliers.length === 0) {
-            buttonsDiv.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Aucun cavalier actif pour cette date</p>';
+            buttonsDiv.innerHTML = '<p class="no-cavaliers-message">Aucun cavalier actif pour cette date</p>';
             return;
         }
 
-        // Récupérer les cavaliers déjà assignés
         const assignedCavaliers = allAssignments[selectedDate]?.cavaliers || [];
 
         cavaliers.forEach(cavalier => {
             const isAssigned = assignedCavaliers.includes(cavalier.name);
 
             const button = document.createElement('button');
-            button.className = 'cavalier-btn' + (isAssigned ? ' assigned' : '');
+            button.className = 'cavalier-btn';
+            if (isAssigned) button.classList.add('assigned');
+
             button.style.borderLeft = '4px solid ' + (cavalier.color || '#667eea');
             button.textContent = cavalier.name;
             button.disabled = isAssigned;
+            button.setAttribute('aria-pressed', isAssigned ? 'true' : 'false');
 
             if (!isAssigned) {
                 button.addEventListener('click', () => addCavalierToDay(cavalier.name));
@@ -286,25 +363,27 @@ async function loadCavalierButtons() {
         });
     } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur de connexion au serveur');
+        showToast('❌ Erreur de chargement des cavaliers');
     }
 }
 
+// ===== ASSIGNED CAVALIERS =====
 function displayAssignedCavaliers() {
     const container = document.getElementById('assignedCavaliers');
     const assignments = allAssignments[selectedDate];
 
-    container.innerHTML = '<h4>Cavaliers du jour :</h4>';
+    container.innerHTML = '';
 
     if (!assignments || !assignments.cavaliers || assignments.cavaliers.length === 0) {
-        container.innerHTML += '<div class="empty-message">Aucun cavalier assigné</div>';
+        container.innerHTML = '<p class="empty-message">Aucun cavalier assigné</p>';
+        updateAssignedCount(0);
         return;
     }
 
     assignments.cavaliers.forEach((cavalier, index) => {
         const item = document.createElement('div');
         item.className = 'assigned-cavalier-item';
-        item.style.backgroundColor = getCavalierColor(cavalier);
+        item.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
 
         const nameSpan = document.createElement('span');
         nameSpan.textContent = cavalier;
@@ -312,15 +391,26 @@ function displayAssignedCavaliers() {
 
         const removeIcon = document.createElement('span');
         removeIcon.className = 'remove-icon';
+        removeIcon.setAttribute('role', 'button');
+        removeIcon.setAttribute('aria-label', `Retirer ${cavalier}`);
         removeIcon.textContent = '×';
-                removeIcon.onclick = () => removeCavalierFromDay(selectedDate, index);
+        removeIcon.onclick = () => removeCavalierFromDay(selectedDate, index);
         item.appendChild(removeIcon);
 
         container.appendChild(item);
     });
+
+    updateAssignedCount(assignments.cavaliers.length);
 }
 
+function updateAssignedCount(count) {
+    const countBadge = document.getElementById('assignedCount');
+    if (countBadge) countBadge.textContent = count || 0;
+}
+
+// ===== AJOUTER CAVALIER =====
 async function addCavalierToDay(cavalier) {
+    showLoading();
     try {
         let cavaliers = [];
         if (allAssignments[selectedDate] && allAssignments[selectedDate].cavaliers) {
@@ -328,7 +418,7 @@ async function addCavalierToDay(cavalier) {
         }
 
         if (cavaliers.includes(cavalier)) {
-            alert('Ce cavalier est déjà assigné à ce jour');
+            showToast('⚠️ Ce cavalier est déjà assigné');
             return;
         }
 
@@ -336,9 +426,7 @@ async function addCavalierToDay(cavalier) {
 
         const response = await fetch(API_URL + '/assignments', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: selectedDate,
                 cavaliers: cavaliers,
@@ -347,6 +435,7 @@ async function addCavalierToDay(cavalier) {
             })
         });
 
+        if (!response.ok) throw new Error('Erreur réseau');
         const data = await response.json();
 
         if (data.success) {
@@ -354,25 +443,39 @@ async function addCavalierToDay(cavalier) {
             displayAssignedCavaliers();
             loadCavalierButtons();
             renderCalendar();
+            showToast('✅ Cavalier ajouté');
         } else {
-            alert('Erreur lors de la sauvegarde');
+            showToast('❌ Erreur lors de la sauvegarde');
         }
     } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur de connexion au serveur');
+        showToast('❌ Erreur de connexion');
+    } finally {
+        hideLoading();
     }
 }
 
+// ===== SUPPRIMER CAVALIER (avec garde) =====
 async function removeCavalierFromDay(date, index) {
+    showLoading();
     try {
-        let cavaliers = allAssignments[date].cavaliers.slice();
+        // Garde: vérifier l'existence des données
+        if (!allAssignments[date] || !Array.isArray(allAssignments[date].cavaliers)) {
+            showToast('⚠️ Aucune assignation pour cette date');
+            return;
+        }
+
+        const cavaliers = allAssignments[date].cavaliers.slice();
+        if (index < 0 || index >= cavaliers.length) {
+            showToast('⚠️ Index invalide');
+            return;
+        }
+
         cavaliers.splice(index, 1);
 
         const response = await fetch(API_URL + '/assignments', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: date,
                 cavaliers: cavaliers,
@@ -381,25 +484,29 @@ async function removeCavalierFromDay(date, index) {
             })
         });
 
+        if (!response.ok) throw new Error('Erreur réseau');
         const data = await response.json();
 
         if (data.success) {
             allAssignments = data.assignments;
-
             if (selectedDate === date) {
                 displayAssignedCavaliers();
                 loadCavalierButtons();
             }
-
             renderCalendar();
+            showToast('✅ Cavalier retiré');
         }
     } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur de connexion au serveur');
+        showToast('❌ Erreur de connexion');
+    } finally {
+        hideLoading();
     }
 }
 
+// ===== COMMENTAIRE =====
 async function saveComment() {
+    showLoading();
     try {
         const comment = document.getElementById('commentText').value.trim();
 
@@ -408,9 +515,7 @@ async function saveComment() {
 
         const response = await fetch(API_URL + '/assignments', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: selectedDate,
                 cavaliers: cavaliers,
@@ -419,20 +524,27 @@ async function saveComment() {
             })
         });
 
+        if (!response.ok) throw new Error('Erreur réseau');
         const data = await response.json();
 
         if (data.success) {
             allAssignments = data.assignments;
             renderCalendar();
-            alert('Commentaire enregistré !');
+            showToast('💾 Commentaire enregistré');
+        } else {
+            showToast('❌ Erreur lors de la sauvegarde');
         }
     } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur de connexion au serveur');
+        showToast('❌ Erreur de connexion');
+    } finally {
+        hideLoading();
     }
 }
 
+// ===== TYPE DE TRAVAIL =====
 async function saveWorkType() {
+    showLoading();
     try {
         const workType = document.getElementById('workTypeSelect').value;
 
@@ -441,9 +553,7 @@ async function saveWorkType() {
 
         const response = await fetch(API_URL + '/assignments', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: selectedDate,
                 cavaliers: cavaliers,
@@ -452,15 +562,48 @@ async function saveWorkType() {
             })
         });
 
+        if (!response.ok) throw new Error('Erreur réseau');
         const data = await response.json();
 
         if (data.success) {
             allAssignments = data.assignments;
             renderCalendar();
+            showToast('✅ Type de travail enregistré');
+        } else {
+            showToast('❌ Erreur lors de la sauvegarde');
         }
     } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur de connexion au serveur');
+        showToast('❌ Erreur de connexion');
+    } finally {
+        hideLoading();
     }
 }
 
+// ===== UI HELPERS =====
+function showToast(message, duration = 3000) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function showLoading() {
+    const loader = document.getElementById('loadingIndicator');
+    if (loader) loader.style.display = 'block';
+}
+
+function hideLoading() {
+    const loader = document.getElementById('loadingIndicator');
+    if (loader) loader.style.display = 'none';
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => { clearTimeout(timeout); func(...args); };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
