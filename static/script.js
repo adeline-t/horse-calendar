@@ -147,15 +147,25 @@ function isMobile() {
 
 // ===== RENDU DU CALENDRIER =====
 function renderCalendar() {
+    console.log('renderCalendar appelé, isMobile:', isMobile());
+
     if (isMobile()) {
+        // Cacher desktop, montrer mobile
+        document.getElementById('calendar').style.display = 'none';
+        document.getElementById('calendarList').style.display = 'flex';
         renderMobileList();
     } else {
+        // Cacher mobile, montrer desktop
+        document.getElementById('calendar').style.display = 'grid';
+        document.getElementById('calendarList').style.display = 'none';
         renderDesktopCalendar();
     }
 }
 
-// ===== RENDU DESKTOP (grille) =====
+// ===== RENDU DESKTOP (grille 7 colonnes) =====
 function renderDesktopCalendar() {
+    console.log('Rendu DESKTOP - Grille');
+
     const calendar = document.getElementById('calendar');
     const monthYear = document.getElementById('monthYear');
 
@@ -168,28 +178,23 @@ function renderDesktopCalendar() {
 
     calendar.innerHTML = '';
 
-    const headers = [
-        { full: 'Lundi', short: 'Lun' },
-        { full: 'Mardi', short: 'Mar' },
-        { full: 'Mercredi', short: 'Mer' },
-        { full: 'Jeudi', short: 'Jeu' },
-        { full: 'Vendredi', short: 'Ven' },
-        { full: 'Samedi', short: 'Sam' },
-        { full: 'Dimanche', short: 'Dim' }
-    ];
-    headers.forEach(h => {
+    // En-têtes des jours
+    const headers = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    headers.forEach(dayName => {
         const div = document.createElement('div');
         div.className = 'day-header';
-        div.innerHTML = `<span class="day-full">${h.full}</span><span class="day-short">${h.short}</span>`;
+        div.textContent = dayName;
         calendar.appendChild(div);
     });
 
+    // Calcul du premier jour
     const firstDay = new Date(year, month, 1);
     let startDay = firstDay.getDay();
-    startDay = startDay === 0 ? 6 : startDay - 1;
+    startDay = startDay === 0 ? 6 : startDay - 1; // Lundi = 0
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
+    // Jours du mois précédent
     let prevMonth = month - 1;
     let prevYear = year;
     if (prevMonth < 0) {
@@ -202,10 +207,12 @@ function renderDesktopCalendar() {
         createDayElement(prevMonthDays - i, true, prevYear, prevMonth, calendar);
     }
 
+    // Jours du mois actuel
     for (let day = 1; day <= daysInMonth; day++) {
         createDayElement(day, false, year, month, calendar);
     }
 
+    // Jours du mois suivant
     let nextMonth = month + 1;
     let nextYear = year;
     if (nextMonth > 11) {
@@ -213,7 +220,7 @@ function renderDesktopCalendar() {
         nextYear = year + 1;
     }
 
-    const totalCells = calendar.children.length - 7;
+    const totalCells = calendar.children.length - 7; // -7 pour les en-têtes
     const remainingCells = 42 - totalCells - 7;
 
     for (let day = 1; day <= remainingCells; day++) {
@@ -235,6 +242,7 @@ function createDayElement(day, isOtherMonth, year, month, container) {
     const assignments = allAssignments[dateKey];
 
     if (assignments) {
+        // Type de travail
         if (assignments.work_type) {
             const workBadge = document.createElement('div');
             workBadge.className = 'work-type-badge';
@@ -242,6 +250,7 @@ function createDayElement(day, isOtherMonth, year, month, container) {
             dayDiv.appendChild(workBadge);
         }
 
+        // Cavaliers
         if (assignments.cavaliers && assignments.cavaliers.length > 0) {
             assignments.cavaliers.forEach((cavalier, index) => {
                 const badge = document.createElement('div');
@@ -267,6 +276,7 @@ function createDayElement(day, isOtherMonth, year, month, container) {
             });
         }
 
+        // Commentaire
         if (assignments.comment && assignments.comment.trim() !== '') {
             const commentIndicator = document.createElement('div');
             commentIndicator.className = 'comment-indicator';
@@ -287,6 +297,8 @@ function createDayElement(day, isOtherMonth, year, month, container) {
 
 // ===== RENDU MOBILE (liste 2 colonnes) =====
 function renderMobileList() {
+    console.log('Rendu MOBILE - Liste');
+
     const calendarList = document.getElementById('calendarList');
     const monthYear = document.getElementById('monthYear');
 
@@ -667,4 +679,20 @@ function showToast(message, duration = 3000) {
 }
 
 function showLoading() {
-    const loader = document.getElementById('loadingIndic
+    const loader = document.getElementById('loadingIndicator');
+    if (loader) loader.style.display = 'block';
+}
+
+function hideLoading() {
+    const loader = document.getElementById('loadingIndicator');
+    if (loader) loader.style.display = 'none';
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => { clearTimeout(timeout); func(...args); };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
