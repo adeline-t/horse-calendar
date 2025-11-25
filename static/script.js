@@ -3,7 +3,7 @@ let currentDate = new Date();
 let selectedDate = null;
 let allAssignments = {};
 let allCavaliers = [];
-let colorByName = new Map(); // map nom -> couleur
+let colorByName = new Map();
 
 // ===== INITIALISATION =====
 document.addEventListener('DOMContentLoaded', function() {
@@ -88,8 +88,6 @@ async function loadCavaliers() {
     const resp = await fetch(API_URL + '/cavaliers');
     if (!resp.ok) throw new Error('Erreur réseau cavaliers');
     allCavaliers = await resp.json();
-
-    // Construire la map nom->couleur
     colorByName = new Map(allCavaliers.map(c => [c.name, c.color]));
 }
 
@@ -138,15 +136,26 @@ function getWorkTypeLabel(workType) {
     return labels[workType] || workType;
 }
 
-function truncateName(name, maxLength = 12) {
-    if (window.innerWidth <= 600 && name.length > maxLength) {
-        return name.substring(0, maxLength - 2) + '..';
-    }
-    return name;
+function getDayName(dayIndex) {
+    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    return days[dayIndex];
+}
+
+function isMobile() {
+    return window.innerWidth <= 600;
 }
 
 // ===== RENDU DU CALENDRIER =====
 function renderCalendar() {
+    if (isMobile()) {
+        renderMobileList();
+    } else {
+        renderDesktopCalendar();
+    }
+}
+
+// ===== RENDU DESKTOP (grille) =====
+function renderDesktopCalendar() {
     const calendar = document.getElementById('calendar');
     const monthYear = document.getElementById('monthYear');
 
@@ -157,8 +166,8 @@ function renderCalendar() {
                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     monthYear.textContent = months[month] + ' ' + year;
 
-    // Vider le calendrier et (re)générer les en-têtes (Lun..Dim)
     calendar.innerHTML = '';
+
     const headers = [
         { full: 'Lundi', short: 'Lun' },
         { full: 'Mardi', short: 'Mar' },
@@ -175,14 +184,12 @@ function renderCalendar() {
         calendar.appendChild(div);
     });
 
-    // Calcul des jours
     const firstDay = new Date(year, month, 1);
     let startDay = firstDay.getDay();
     startDay = startDay === 0 ? 6 : startDay - 1;
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-    // Jours du mois précédent
     let prevMonth = month - 1;
     let prevYear = year;
     if (prevMonth < 0) {
@@ -192,15 +199,13 @@ function renderCalendar() {
     const prevMonthDays = new Date(prevYear, prevMonth + 1, 0).getDate();
 
     for (let i = startDay - 1; i >= 0; i--) {
-        createDayElement(prevMonthDays - i, true, prevYear, prevMonth);
+        createDayElement(prevMonthDays - i, true, prevYear, prevMonth, calendar);
     }
 
-    // Jours du mois courant
     for (let day = 1; day <= daysInMonth; day++) {
-        createDayElement(day, false, year, month);
+        createDayElement(day, false, year, month, calendar);
     }
 
-    // Jours du mois suivant
     let nextMonth = month + 1;
     let nextYear = year;
     if (nextMonth > 11) {
@@ -212,12 +217,11 @@ function renderCalendar() {
     const remainingCells = 42 - totalCells - 7;
 
     for (let day = 1; day <= remainingCells; day++) {
-        createDayElement(day, true, nextYear, nextMonth);
+        createDayElement(day, true, nextYear, nextMonth, calendar);
     }
 }
 
-function createDayElement(day, isOtherMonth, year, month) {
-    const calendar = document.getElementById('calendar');
+function createDayElement(day, isOtherMonth, year, month, container) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'day';
     if (isOtherMonth) dayDiv.classList.add('other-month');
@@ -231,7 +235,6 @@ function createDayElement(day, isOtherMonth, year, month) {
     const assignments = allAssignments[dateKey];
 
     if (assignments) {
-        // Type de travail
         if (assignments.work_type) {
             const workBadge = document.createElement('div');
             workBadge.className = 'work-type-badge';
@@ -239,7 +242,6 @@ function createDayElement(day, isOtherMonth, year, month) {
             dayDiv.appendChild(workBadge);
         }
 
-        // Cavaliers
         if (assignments.cavaliers && assignments.cavaliers.length > 0) {
             assignments.cavaliers.forEach((cavalier, index) => {
                 const badge = document.createElement('div');
@@ -247,27 +249,24 @@ function createDayElement(day, isOtherMonth, year, month) {
                 badge.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
 
                 const nameSpan = document.createElement('span');
-                nameSpan.textContent = truncateName(cavalier);
+                nameSpan.textContent = cavalier;
                 nameSpan.title = cavalier;
                 badge.appendChild(nameSpan);
 
-                if (window.innerWidth > 600) {
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'remove-btn';
-                    removeBtn.setAttribute('aria-label', `Retirer ${cavalier}`);
-                    removeBtn.textContent = '×';
-                    removeBtn.onclick = function(event) {
-                        event.stopPropagation();
-                        removeCavalierFromDay(dateKey, index);
-                    };
-                    badge.appendChild(removeBtn);
-                }
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.setAttribute('aria-label', `Retirer ${cavalier}`);
+                removeBtn.textContent = '×';
+                removeBtn.onclick = function(event) {
+                    event.stopPropagation();
+                    removeCavalierFromDay(dateKey, index);
+                };
+                badge.appendChild(removeBtn);
 
                 dayDiv.appendChild(badge);
             });
         }
 
-        // Indicateur commentaire
         if (assignments.comment && assignments.comment.trim() !== '') {
             const commentIndicator = document.createElement('div');
             commentIndicator.className = 'comment-indicator';
@@ -283,7 +282,86 @@ function createDayElement(day, isOtherMonth, year, month) {
         }
     });
 
-    calendar.appendChild(dayDiv);
+    container.appendChild(dayDiv);
+}
+
+// ===== RENDU MOBILE (liste 2 colonnes) =====
+function renderMobileList() {
+    const calendarList = document.getElementById('calendarList');
+    const monthYear = document.getElementById('monthYear');
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    monthYear.textContent = months[month] + ' ' + year;
+
+    calendarList.innerHTML = '';
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateKey = getDateKey(year, month, day);
+        const date = new Date(year, month, day);
+        const dayOfWeek = getDayName(date.getDay());
+        const assignments = allAssignments[dateKey];
+
+        const row = document.createElement('div');
+        row.className = 'list-row';
+
+        // Colonne date
+        const dateCol = document.createElement('div');
+        dateCol.className = 'list-date';
+        dateCol.innerHTML = `
+            <div class="list-day-number">${day}</div>
+            <div class="list-day-name">${dayOfWeek}</div>
+        `;
+        row.appendChild(dateCol);
+
+        // Colonne détails
+        const detailsCol = document.createElement('div');
+        detailsCol.className = 'list-details';
+
+        if (assignments && (assignments.cavaliers?.length > 0 || assignments.work_type || assignments.comment)) {
+            // Type de travail
+            if (assignments.work_type) {
+                const workDiv = document.createElement('div');
+                workDiv.className = 'list-work-type';
+                workDiv.textContent = getWorkTypeIcon(assignments.work_type) + ' ' + getWorkTypeLabel(assignments.work_type);
+                detailsCol.appendChild(workDiv);
+            }
+
+            // Cavaliers
+            if (assignments.cavaliers && assignments.cavaliers.length > 0) {
+                assignments.cavaliers.forEach(cavalier => {
+                    const cavalierDiv = document.createElement('div');
+                    cavalierDiv.className = 'list-cavalier';
+                    cavalierDiv.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
+                    cavalierDiv.textContent = cavalier;
+                    detailsCol.appendChild(cavalierDiv);
+                });
+            }
+
+            // Commentaire
+            if (assignments.comment && assignments.comment.trim() !== '') {
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'list-comment';
+                commentDiv.textContent = '💬 ' + (assignments.comment.length > 30 ? assignments.comment.substring(0, 30) + '...' : assignments.comment);
+                detailsCol.appendChild(commentDiv);
+            }
+        } else {
+            detailsCol.innerHTML = '<div class="list-empty">Aucune activité</div>';
+        }
+
+        row.appendChild(detailsCol);
+
+        row.addEventListener('click', () => {
+            openModal(day, month, year);
+        });
+
+        calendarList.appendChild(row);
+    }
 }
 
 // ===== MODAL =====
@@ -455,11 +533,10 @@ async function addCavalierToDay(cavalier) {
     }
 }
 
-// ===== SUPPRIMER CAVALIER (avec garde) =====
+// ===== SUPPRIMER CAVALIER =====
 async function removeCavalierFromDay(date, index) {
     showLoading();
     try {
-        // Garde: vérifier l'existence des données
         if (!allAssignments[date] || !Array.isArray(allAssignments[date].cavaliers)) {
             showToast('⚠️ Aucune assignation pour cette date');
             return;
@@ -590,20 +667,4 @@ function showToast(message, duration = 3000) {
 }
 
 function showLoading() {
-    const loader = document.getElementById('loadingIndicator');
-    if (loader) loader.style.display = 'block';
-}
-
-function hideLoading() {
-    const loader = document.getElementById('loadingIndicator');
-    if (loader) loader.style.display = 'none';
-}
-
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => { clearTimeout(timeout); func(...args); };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
+    const loader = document.getElementById('loadingIndic
