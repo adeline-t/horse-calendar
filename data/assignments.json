@@ -22,22 +22,22 @@
     "cavaliers": [
       "Capucine"
     ],
-    "comment": "",
-    "work_type": "plat"
+    "comment": "Jument déférée",
+    "work_type": "tap"
   },
   "2025-11-26": {
     "cavaliers": [
       "Anne"
     ],
     "comment": "",
-    "work_type": ""
+    "work_type": "tap"
   },
   "2025-11-27": {
     "cavaliers": [
       "Anne"
     ],
-    "comment": "",
-    "work_type": ""
+    "comment": "Jument reférée",
+    "work_type": "tap"
   },
   "2025-11-21": {
     "cavaliers": [
@@ -80,7 +80,7 @@
       "Anne"
     ],
     "comment": "",
-    "work_type": ""
+    "work_type": "plat"
   },
   "2025-11-16": {
     "cavaliers": [
@@ -140,5 +140,75 @@
     ],
     "comment": "",
     "work_type": "liberte"
+  },
+  "2025-11-29": {
+    "cavaliers": [
+      "Adeline"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-11-30": {
+    "cavaliers": [
+      "Adeline"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-06": {
+    "cavaliers": [
+      "Claire"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-13": {
+    "cavaliers": [
+      "Claire"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-20": {
+    "cavaliers": [
+      "Claire"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-27": {
+    "cavaliers": [
+      "Claire"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-10": {
+    "cavaliers": [
+      "Anne"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-11": {
+    "cavaliers": [
+      "Anne"
+    ],
+    "comment": "",
+    "work_type": ""
+  },
+  "2025-12-04": {
+    "cavaliers": [
+      "Adeline"
+    ],
+    "comment": "",
+    "work_type": "tap"
+  },
+  "2025-12-03": {
+    "cavaliers": [
+      "Adeline"
+    ],
+    "comment": "Debut du travail en longue-rennes",
+    "work_type": "tap"
   }
 }

@@ -1,21 +1,20 @@
 import os
 
 class Config:
-    # Dossiers
+    # Chemins absolus pour PythonAnywhere
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_DIR = os.path.join(BASE_DIR, 'data')
 
-    # Fichiers de données
-    CAVALIERS_FILE = os.path.join(DATA_DIR, 'cavaliers.json')
     ASSIGNMENTS_FILE = os.path.join(DATA_DIR, 'assignments.json')
+    CAVALIERS_FILE = os.path.join(DATA_DIR, 'cavaliers.json')
 
-    # Configuration Flask
-    DEBUG = True
+    # Configuration serveur
+    DEBUG = False  # ⚠️ Mettre False en production sur PythonAnywhere
     HOST = '0.0.0.0'
-    PORT = 4000
+    PORT = 5000
 
     @staticmethod
     def init_directories():
-        """Créer les dossiers nécessaires"""
-        if not os.path.exists(Config.DATA_DIR):
-            os.makedirs(Config.DATA_DIR)
+        """Créer les dossiers nécessaires s'ils n'existent pas"""
+        os.makedirs(Config.DATA_DIR, exist_ok=True)
+        print(f"✅ Dossier data créé/vérifié : {Config.DATA_DIR}")
