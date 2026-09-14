@@ -1,4 +1,6 @@
 const API_URL = '/api';
+const DISPLAY_LOCALE = 'fr-FR';
+const MONTH_FORMATTER = new Intl.DateTimeFormat(DISPLAY_LOCALE, { month: 'long' });
 
 document.addEventListener('DOMContentLoaded', function() {
     initializeFilters();
@@ -19,13 +21,11 @@ function initializeFilters() {
     const monthFilter = document.getElementById('monthFilter');
     const yearFilter = document.getElementById('yearFilter');
 
-    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-
-    months.forEach((month, index) => {
+    Array.from({ length: 12 }, (_, index) => index).forEach(index => {
         const option = document.createElement('option');
         option.value = String(index + 1).padStart(2, '0');
-        option.textContent = month;
+        const month = MONTH_FORMATTER.format(new Date(2024, index, 1));
+        option.textContent = month.charAt(0).toLocaleUpperCase(DISPLAY_LOCALE) + month.slice(1);
         monthFilter.appendChild(option);
     });
 

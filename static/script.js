@@ -1,4 +1,15 @@
 const API_URL = '/api';
+const DISPLAY_LOCALE = 'fr-FR';
+const MONTH_YEAR_FORMATTER = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+    month: 'long',
+    year: 'numeric'
+});
+const LONG_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+    weekday: 'long'
+});
+const SHORT_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(DISPLAY_LOCALE, {
+    weekday: 'short'
+});
 let currentDate = new Date();
 let selectedDate = null;
 let allAssignments = {};
@@ -127,12 +138,15 @@ function escapeHtml(value) {
     return element.innerHTML;
 }
 
+function capitalizeLabel(value) {
+    return value.charAt(0).toLocaleUpperCase(DISPLAY_LOCALE) + value.slice(1);
+}
+
 // Types de travail importés depuis workTypes.js
 // (les fonctions getWorkTypeIcon et getWorkTypeLabel sont définies dans workTypes.js)
 
-function getDayName(dayIndex) {
-    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-    return days[dayIndex];
+function getShortWeekday(date) {
+    return capitalizeLabel(SHORT_WEEKDAY_FORMATTER.format(date).replace(/\.$/, ''));
 }
 
 function isMobile() {
@@ -166,14 +180,19 @@ function renderDesktopCalendar() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-    monthYear.textContent = months[month] + ' ' + year;
+    monthYear.textContent = capitalizeLabel(
+        MONTH_YEAR_FORMATTER.format(new Date(year, month, 1))
+    );
 
     calendar.innerHTML = '';
 
     // En-têtes des jours
-    const headers = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    const firstMonday = new Date(2024, 0, 1);
+    const headers = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(firstMonday);
+        date.setDate(firstMonday.getDate() + index);
+        return capitalizeLabel(LONG_WEEKDAY_FORMATTER.format(date));
+    });
     headers.forEach(dayName => {
         const div = document.createElement('div');
         div.className = 'day-header';
@@ -184,7 +203,7 @@ function renderDesktopCalendar() {
     // Calcul du premier jour
     const firstDay = new Date(year, month, 1);
     let startDay = firstDay.getDay();
-    startDay = startDay === 0 ? 6 : startDay - 1; // Lundi = 0
+    startDay = startDay === 0 ? 6 : startDay - 1; // Convert to a Monday-first index.
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -288,9 +307,9 @@ function renderMobileList() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const months = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-                   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-    monthYear.textContent = months[month] + ' ' + year;
+    monthYear.textContent = capitalizeLabel(
+        MONTH_YEAR_FORMATTER.format(new Date(year, month, 1))
+    );
 
     calendarList.innerHTML = '';
 
@@ -299,7 +318,7 @@ function renderMobileList() {
     for (let day = 1; day <= daysInMonth; day++) {
         const dateKey = getDateKey(year, month, day);
         const date = new Date(year, month, day);
-        const dayOfWeek = getDayName(date.getDay());
+        const dayOfWeek = getShortWeekday(date);
         const assignments = allAssignments[dateKey];
 
         const row = document.createElement('div');
@@ -363,7 +382,7 @@ async function openModal(day, month, year) {
 
     const date = new Date(year, month, day);
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    modalDate.textContent = date.toLocaleDateString('fr-FR', options);
+    modalDate.textContent = date.toLocaleDateString(DISPLAY_LOCALE, options);
 
     resetAssignmentForm();
     await populateAssignmentRiders();
