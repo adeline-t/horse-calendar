@@ -8,9 +8,9 @@ let selectedRiderForWorkType = null; // Pour tracker le rider en cours de sélec
 
 // ===== INITIALISATION =====
 function initializeWorkTypeSelect() {
-    const select = document.getElementById('workTypeSelect');
-    
-    // Ajouter chaque type de travail
+    const select = document.getElementById('assignmentWorkTypeSelect');
+    if (!select) return;
+
     Object.entries(WORK_TYPES).forEach(([key, value]) => {
         const option = document.createElement('option');
         option.value = key;
@@ -48,46 +48,10 @@ function setupEventListeners() {
         if (e.target === modal) closeModal();
     });
 
-    const commentText = document.getElementById('commentText');
-    const charCount = document.getElementById('charCount');
-    const saveCommentBtn = document.getElementById('saveCommentBtn');
-    const clearCommentBtn = document.getElementById('clearCommentBtn');
-
-    if (commentText && charCount) {
-        commentText.addEventListener('input', () => {
-            charCount.textContent = commentText.value.length;
-        });
-    }
-
-    if (saveCommentBtn) saveCommentBtn.addEventListener('click', saveComment);
-
-    if (clearCommentBtn) {
-        clearCommentBtn.addEventListener('click', () => {
-            if (commentText) commentText.value = '';
-            if (charCount) charCount.textContent = '0';
-        });
-    }
-
-    const workTypeSelect = document.getElementById('workTypeSelect');
-    if (workTypeSelect) {
-        workTypeSelect.addEventListener('change', () => {});  // Désactivé, on va utiliser un nouveau système
-    }
-
-    // Custom rider button
-    const addCustomRiderBtn = document.getElementById('addCustomRiderBtn');
-    if (addCustomRiderBtn) {
-        addCustomRiderBtn.addEventListener('click', addCustomRider);
-    }
-
-    // Allow Enter key in custom rider input
-    const customRiderInput = document.getElementById('customRiderInput');
-    if (customRiderInput) {
-        customRiderInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addCustomRider();
-            }
-        });
-    }
+    const riderSelect = document.getElementById('assignmentRiderSelect');
+    const addAssignmentBtn = document.getElementById('addAssignmentBtn');
+    if (riderSelect) riderSelect.addEventListener('change', toggleCustomRiderField);
+    if (addAssignmentBtn) addAssignmentBtn.addEventListener('click', addAssignment);
 
     window.addEventListener('resize', debounce(() => {
         renderCalendar();
@@ -132,6 +96,12 @@ function getDateKey(year, month, day) {
 
 function getRiderColor(name) {
     return colorByName.get(name) || '#667eea';
+}
+
+function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = value || '';
+    return element.innerHTML;
 }
 
 // Types de travail importés depuis workTypes.js
@@ -243,27 +213,29 @@ function createDayElement(day, isOtherMonth, year, month, container) {
     const assignments = allAssignments[dateKey];
 
     if (assignments) {
-        // Afficher les tâches (rider + work_type)
-        const tasks = assignments.tasks || [];
+        // Display each assignment as one rider/work type/comment unit.
+        const dayAssignments = assignments.assignments || [];
         
-        if (tasks.length > 0) {
-            tasks.forEach((task, index) => {
+        if (dayAssignments.length > 0) {
+            dayAssignments.forEach((assignment, index) => {
                 const badge = document.createElement('div');
-                badge.className = 'task-badge';
-                badge.style.borderLeft = '4px solid ' + getRiderColor(task.rider);
+                badge.className = 'assignment-badge';
+                badge.style.borderLeft = '4px solid ' + getRiderColor(assignment.rider);
 
-                const taskText = document.createElement('span');
-                taskText.textContent = `${task.rider} ${getWorkTypeIcon(task.work_type)}`;
-                taskText.title = `${task.rider} - ${getWorkTypeLabel(task.work_type)}`;
-                badge.appendChild(taskText);
+                const assignmentText = document.createElement('span');
+                assignmentText.textContent = `${assignment.rider} ${getWorkTypeIcon(assignment.work_type)}`;
+                assignmentText.title = [assignment.rider, getWorkTypeLabel(assignment.work_type), assignment.comment]
+                    .filter(Boolean)
+                    .join(' · ');
+                badge.appendChild(assignmentText);
 
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-btn';
-                removeBtn.setAttribute('aria-label', `Retirer ${task.rider} - ${getWorkTypeLabel(task.work_type)}`);
+                removeBtn.setAttribute('aria-label', `Retirer ${assignment.rider} - ${getWorkTypeLabel(assignment.work_type)}`);
                 removeBtn.textContent = '×';
                 removeBtn.onclick = function(event) {
                     event.stopPropagation();
-                    removeTask(dateKey, index);
+                    removeAssignment(dateKey, index);
                 };
                 badge.appendChild(removeBtn);
 
@@ -271,14 +243,6 @@ function createDayElement(day, isOtherMonth, year, month, container) {
             });
         }
 
-        // Commentaire
-        if (assignments.comment && assignments.comment.trim() !== '') {
-            const commentIndicator = document.createElement('div');
-            commentIndicator.className = 'comment-indicator';
-            commentIndicator.textContent = '💬';
-            commentIndicator.title = 'Commentaire disponible';
-            dayDiv.appendChild(commentIndicator);
-        }
     }
 
     dayDiv.addEventListener('click', () => {
@@ -330,24 +294,23 @@ function renderMobileList() {
         const detailsCol = document.createElement('div');
         detailsCol.className = 'list-details';
 
-        if (assignments && (assignments.tasks?.length > 0 || assignments.comment)) {
-            // Tâches (rider + work_type)
-            if (assignments.tasks && assignments.tasks.length > 0) {
-                assignments.tasks.forEach(task => {
-                    const taskDiv = document.createElement('div');
-                    taskDiv.className = 'list-task';
-                    taskDiv.style.borderLeft = '4px solid ' + getRiderColor(task.rider);
-                    taskDiv.innerHTML = `<strong>${task.rider}</strong> ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
-                    detailsCol.appendChild(taskDiv);
-                });
-            }
+        if (assignments?.assignments?.length > 0) {
+            // Assignments
+            if (assignments.assignments && assignments.assignments.length > 0) {
+                assignments.assignments.forEach(assignment => {
+                    const assignmentDiv = document.createElement('div');
+                    assignmentDiv.className = 'list-assignment';
+                    assignmentDiv.style.borderLeft = '4px solid ' + getRiderColor(assignment.rider);
+                    assignmentDiv.innerHTML = `<strong>${escapeHtml(assignment.rider)}</strong> ${getWorkTypeIcon(assignment.work_type)} ${getWorkTypeLabel(assignment.work_type)}`;
+                    detailsCol.appendChild(assignmentDiv);
 
-            // Commentaire
-            if (assignments.comment && assignments.comment.trim() !== '') {
-                const commentDiv = document.createElement('div');
-                commentDiv.className = 'list-comment';
-                commentDiv.textContent = '💬 ' + (assignments.comment.length > 30 ? assignments.comment.substring(0, 30) + '...' : assignments.comment);
-                detailsCol.appendChild(commentDiv);
+                    if (assignment.comment) {
+                        const commentDiv = document.createElement('div');
+                        commentDiv.className = 'list-comment';
+                        commentDiv.textContent = '💬 ' + assignment.comment;
+                        detailsCol.appendChild(commentDiv);
+                    }
+                });
             }
         } else {
             detailsCol.innerHTML = '<div class="list-empty">Aucune activité</div>';
@@ -374,33 +337,9 @@ async function openModal(day, month, year) {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     modalDate.textContent = date.toLocaleDateString('fr-FR', options);
 
-    // Masquer la section "Type de travail" depuis qu'on gère les types par rider
-    const workTypeSection = document.querySelector('.work-type-section');
-    if (workTypeSection) {
-        workTypeSection.style.display = 'none';
-    }
-
-    const commentText = document.getElementById('commentText');
-    const charCount = document.getElementById('charCount');
-    if (commentText) {
-        const comment = allAssignments[selectedDate]?.comment || '';
-        commentText.value = comment;
-        if (charCount) charCount.textContent = comment.length;
-    }
-
-    // Initialiser le sélecteur de type de travail personnalisé
-    initializeCustomWorkTypeSelect();
-    
-    // Réinitialiser les champs personnalisés
-    const customRiderInput = document.getElementById('customRiderInput');
-    const customWorkTypeSelect = document.getElementById('customWorkTypeSelect');
-    const customRiderMessage = document.getElementById('customRiderMessage');
-    if (customRiderInput) customRiderInput.value = '';
-    if (customWorkTypeSelect) customWorkTypeSelect.value = '';
-    if (customRiderMessage) customRiderMessage.textContent = '';
-
-    displayAssignedTasks();
-    await loadRiderButtons();
+    resetAssignmentForm();
+    await populateAssignmentRiders();
+    displayAssignments();
 
     modal.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
@@ -409,20 +348,104 @@ async function openModal(day, month, year) {
     if (modalContent) modalContent.scrollTop = 0;
 }
 
-function initializeCustomWorkTypeSelect() {
-    const select = document.getElementById('customWorkTypeSelect');
+async function populateAssignmentRiders() {
+    const select = document.getElementById('assignmentRiderSelect');
     if (!select) return;
-    
-    // Garder la première option vide
-    select.innerHTML = '<option value="">-- Sélectionner le type --</option>';
-    
-    // Ajouter chaque type de travail
-    Object.entries(WORK_TYPES).forEach(([key, value]) => {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = `${value.icon} ${value.label}`;
-        select.appendChild(option);
-    });
+
+    select.innerHTML = '<option value="">Sélectionner un cavalier</option>';
+
+    try {
+        const response = await fetch(`${API_URL}/riders/active?date=${selectedDate}`);
+        if (!response.ok) throw new Error('Unable to load riders');
+
+        const riders = await response.json();
+        riders.forEach(rider => {
+            const option = document.createElement('option');
+            option.value = rider.name;
+            option.textContent = rider.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading riders:', error);
+        showToast('❌ Erreur de chargement des cavaliers');
+    }
+
+    const customOption = document.createElement('option');
+    customOption.value = '__custom__';
+    customOption.textContent = 'Autre cavalier…';
+    select.appendChild(customOption);
+}
+
+function toggleCustomRiderField() {
+    const select = document.getElementById('assignmentRiderSelect');
+    const field = document.getElementById('customRiderField');
+    const input = document.getElementById('assignmentCustomRider');
+    const isCustom = select?.value === '__custom__';
+
+    if (field) field.hidden = !isCustom;
+    if (!isCustom && input) input.value = '';
+    if (isCustom && input) input.focus();
+}
+
+function resetAssignmentForm() {
+    const riderSelect = document.getElementById('assignmentRiderSelect');
+    const workTypeSelect = document.getElementById('assignmentWorkTypeSelect');
+    const customRider = document.getElementById('assignmentCustomRider');
+    const comment = document.getElementById('assignmentComment');
+    const message = document.getElementById('assignmentFormMessage');
+
+    if (riderSelect) riderSelect.value = '';
+    if (workTypeSelect) workTypeSelect.value = '';
+    if (customRider) customRider.value = '';
+    if (comment) comment.value = '';
+    if (message) message.textContent = '';
+    toggleCustomRiderField();
+}
+
+async function addAssignment() {
+    const riderSelect = document.getElementById('assignmentRiderSelect');
+    const customRider = document.getElementById('assignmentCustomRider');
+    const workTypeSelect = document.getElementById('assignmentWorkTypeSelect');
+    const commentInput = document.getElementById('assignmentComment');
+    const message = document.getElementById('assignmentFormMessage');
+
+    const rider = riderSelect?.value === '__custom__'
+        ? customRider?.value.trim()
+        : riderSelect?.value;
+    const workType = workTypeSelect?.value;
+    const comment = commentInput?.value.trim() || '';
+
+    if (!rider || !workType) {
+        if (message) message.textContent = 'Sélectionnez un cavalier et un type de travail.';
+        return;
+    }
+
+    showLoading();
+    try {
+        const response = await fetch(`${API_URL}/assignments/${selectedDate}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rider, work_type: workType, comment })
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            if (message) message.textContent = data.error || 'Impossible d’ajouter cet assignment.';
+            return;
+        }
+
+        allAssignments = data.assignments;
+        displayAssignments();
+        renderCalendar();
+        resetAssignmentForm();
+        await populateAssignmentRiders();
+        showToast('✅ Assignment ajouté');
+    } catch (error) {
+        console.error('Error adding assignment:', error);
+        if (message) message.textContent = 'Erreur de connexion.';
+    } finally {
+        hideLoading();
+    }
 }
 
 function closeModal() {
@@ -431,373 +454,85 @@ function closeModal() {
     modal.setAttribute('aria-hidden', 'true');
 }
 
-// ===== RIDERS BUTTONS =====
-async function loadRiderButtons() {
-    try {
-        const response = await fetch(API_URL + '/riders/active?date=' + selectedDate);
-        if (!response.ok) throw new Error('Erreur réseau');
-
-        const riders = await response.json();
-        const buttonsDiv = document.getElementById('riderButtons');
-        buttonsDiv.innerHTML = '';
-
-        if (riders.length === 0) {
-            buttonsDiv.innerHTML = '<p class="no-riders-message">Aucun cavalier actif pour cette date</p>';
-            return;
-        }
-
-        const tasks = allAssignments[selectedDate]?.tasks || [];
-        
-        riders.forEach(rider => {
-            // Vérifier si ce rider a déjà toutes les tâches possibles
-            const riderTasks = tasks.filter(t => t.rider === rider.name);
-            const allWorkTypesAssigned = riderTasks.length > 0;
-
-            const button = document.createElement('button');
-            button.className = 'rider-btn';
-            if (allWorkTypesAssigned && riderTasks.length >= Object.keys(WORK_TYPES).length) {
-                button.classList.add('assigned');
-            }
-
-            button.style.borderLeft = '4px solid ' + (rider.color || '#667eea');
-            button.textContent = rider.name;
-            if (allWorkTypesAssigned && riderTasks.length >= Object.keys(WORK_TYPES).length) {
-                button.disabled = true;
-            }
-            button.setAttribute('aria-pressed', allWorkTypesAssigned ? 'true' : 'false');
-
-            button.addEventListener('click', () => showWorkTypeSelector(rider.name));
-
-            buttonsDiv.appendChild(button);
-        });
-    } catch (error) {
-        console.error('Erreur:', error);
-        showToast('❌ Erreur de chargement des cavaliers');
-    }
-}
-
 // ===== ASSIGNED TASKS =====
-function displayAssignedTasks() {
+function displayAssignments() {
     const container = document.getElementById('assignedRiders');
     const assignments = allAssignments[selectedDate];
 
     container.innerHTML = '';
 
-    if (!assignments || !assignments.tasks || assignments.tasks.length === 0) {
-        container.innerHTML = '<p class="empty-message">Aucune tâche assignée</p>';
+    if (!assignments || !assignments.assignments || assignments.assignments.length === 0) {
+        container.innerHTML = `<div class="assignment-empty">
+            <span aria-hidden="true">📋</span>
+            <strong>Aucun assignment</strong>
+            <p>Ajoutez le premier assignment de cette journée.</p>
+        </div>`;
         updateAssignedCount(0);
         return;
     }
 
-    assignments.tasks.forEach((task, index) => {
+    assignments.assignments.forEach((assignment, index) => {
         const item = document.createElement('div');
-        item.className = 'assigned-task-item';
-        item.style.borderLeft = '4px solid ' + getRiderColor(task.rider);
+        item.className = 'assignment-card';
+        item.style.setProperty('--rider-color', getRiderColor(assignment.rider));
 
-        const taskInfo = document.createElement('div');
-        taskInfo.className = 'task-info';
-        taskInfo.innerHTML = `<strong>${task.rider}</strong> - ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
-        item.appendChild(taskInfo);
+        const assignmentContent = document.createElement('div');
+        assignmentContent.className = 'assignment-card-content';
+        assignmentContent.innerHTML = `
+            <div class="assignment-card-heading">
+                <span class="assignment-rider-dot" aria-hidden="true"></span>
+                <strong>${escapeHtml(assignment.rider)}</strong>
+            </div>
+            <div class="assignment-work-type">
+                <span aria-hidden="true">${getWorkTypeIcon(assignment.work_type)}</span>
+                ${getWorkTypeLabel(assignment.work_type)}
+            </div>
+            <p class="assignment-comment ${assignment.comment ? '' : 'is-empty'}">
+                ${escapeHtml(assignment.comment || 'Aucun commentaire')}
+            </p>`;
+        item.appendChild(assignmentContent);
 
-        const removeIcon = document.createElement('span');
+        const removeIcon = document.createElement('button');
         removeIcon.className = 'remove-icon';
-        removeIcon.setAttribute('role', 'button');
-        removeIcon.setAttribute('aria-label', `Retirer ${task.rider} - ${getWorkTypeLabel(task.work_type)}`);
+        removeIcon.type = 'button';
+        removeIcon.setAttribute('aria-label', `Retirer ${assignment.rider} - ${getWorkTypeLabel(assignment.work_type)}`);
         removeIcon.textContent = '×';
-        removeIcon.onclick = () => removeTask(selectedDate, index);
+        removeIcon.onclick = () => removeAssignment(selectedDate, index);
         item.appendChild(removeIcon);
 
         container.appendChild(item);
     });
 
-    updateAssignedCount(assignments.tasks.length);
+    updateAssignedCount(assignments.assignments.length);
 }
 
 function updateAssignedCount(count) {
     const countBadge = document.getElementById('assignedCount');
     if (countBadge) countBadge.textContent = count || 0;
-}
-
-// ===== WORK TYPE SELECTOR =====
-function showWorkTypeSelector(riderName) {
-    selectedRiderForWorkType = riderName;
-    
-    const tasks = allAssignments[selectedDate]?.tasks || [];
-    const riderWorkTypes = new Set(
-        tasks.filter(t => t.rider === riderName).map(t => t.work_type)
-    );
-    
-    const buttonsDiv = document.getElementById('riderButtons');
-    const originalContent = buttonsDiv.innerHTML;
-    
-    buttonsDiv.innerHTML = `<div class="work-type-selector">
-        <div class="work-type-selector-header">
-            <button class="back-btn" aria-label="Retour">&larr;</button>
-            <span class="selector-title">Type de travail pour ${riderName}</span>
-        </div>
-        <div class="work-type-options" id="workTypeOptions"></div>
-    </div>`;
-    
-    const workTypeOptions = document.getElementById('workTypeOptions');
-    Object.entries(WORK_TYPES).forEach(([key, value]) => {
-        const isSelected = riderWorkTypes.has(key);
-        const option = document.createElement('button');
-        option.className = 'work-type-option';
-        if (isSelected) option.classList.add('selected');
-        
-        option.innerHTML = `${value.icon} ${value.label}`;
-        option.onclick = () => {
-            if (isSelected) {
-                removeTaskForRider(riderName, key);
-            } else {
-                addTaskForRider(riderName, key);
-            }
-        };
-        
-        workTypeOptions.appendChild(option);
-    });
-    
-    // Bouton retour
-    const backBtn = document.querySelector('.back-btn');
-    if (backBtn) {
-        backBtn.onclick = () => {
-            buttonsDiv.innerHTML = originalContent;
-            loadRiderButtons();
-        };
+    const summary = document.getElementById('assignmentSummary');
+    if (summary) {
+        summary.textContent = count === 0
+            ? 'Aucun assignment prévu'
+            : `${count} assignment${count > 1 ? 's' : ''} prévu${count > 1 ? 's' : ''}`;
     }
 }
 
-async function addTaskForRider(rider, workType) {
+// ===== REMOVE ASSIGNMENT =====
+async function removeAssignment(date, index) {
     showLoading();
     try {
-        const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                rider: rider,
-                work_type: workType
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            showToast('❌ ' + (error.error || 'Erreur'));
-            return;
-        }
-        
-        const data = await response.json();
-        if (data.success) {
-            allAssignments = data.assignments;
-            displayAssignedTasks();
-            showWorkTypeSelector(rider); // Rafraîchir le sélecteur
-            renderCalendar();
-            showToast(`✅ ${rider} - ${getWorkTypeLabel(workType)} ajouté`);
-        }
-    } catch (error) {
-        console.error('Erreur:', error);
-        showToast('❌ Erreur de connexion');
-    } finally {
-        hideLoading();
-    }
-}
-
-async function removeTaskForRider(rider, workType) {
-    showLoading();
-    try {
-        const tasks = allAssignments[selectedDate]?.tasks || [];
-        const taskIndex = tasks.findIndex(t => t.rider === rider && t.work_type === workType);
-        
-        if (taskIndex === -1) {
-            showToast('❌ Tâche non trouvée');
-            return;
-        }
-        
-        const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks/${taskIndex}`, {
-            method: 'DELETE'
-        });
-
-        if (!response.ok) throw new Error('Erreur réseau');
-        const data = await response.json();
-
-        if (data.success) {
-            allAssignments = data.assignments;
-            displayAssignedTasks();
-            if (Object.keys(allAssignments).includes(selectedDate) && 
-                allAssignments[selectedDate]?.tasks?.some(t => t.rider === rider)) {
-                showWorkTypeSelector(rider); // Rafraîchir le sélecteur
-            } else {
-                // Revenir à la liste des riders si plus de tâches pour ce rider
-                loadRiderButtons();
-            }
-            renderCalendar();
-            showToast(`✅ ${rider} - ${getWorkTypeLabel(workType)} retiré`);
-        }
-    } catch (error) {
-        console.error('Erreur:', error);
-        showToast('❌ Erreur de connexion');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ===== ADD A CUSTOM RIDER =====
-async function addCustomRider() {
-    const customRiderInput = document.getElementById('customRiderInput');
-    const customWorkTypeSelect = document.getElementById('customWorkTypeSelect');
-    const customRiderMessage = document.getElementById('customRiderMessage');
-    
-    if (!customRiderInput || !customWorkTypeSelect) return;
-    
-    const riderName = customRiderInput.value.trim();
-    const workType = customWorkTypeSelect.value;
-    
-    // Validation
-    if (!riderName) {
-        if (customRiderMessage) {
-                customRiderMessage.textContent = 'Veuillez entrer un nom de cavalier';
-            customRiderMessage.className = 'custom-rider-message error';
-        }
-        return;
-    }
-    
-    if (!workType) {
-        if (customRiderMessage) {
-            customRiderMessage.textContent = 'Veuillez sélectionner un type de travail';
-            customRiderMessage.className = 'custom-rider-message error';
-        }
-        return;
-    }
-    
-    showLoading();
-    try {
-        // Vérifier que la tâche n'existe pas déjà
-        const tasks = allAssignments[selectedDate]?.tasks || [];
-        if (tasks.some(t => t.rider === riderName && t.work_type === workType)) {
-            if (customRiderMessage) {
-                customRiderMessage.textContent = 'Cette tâche existe déjà';
-                customRiderMessage.className = 'custom-rider-message error';
-            }
-            hideLoading();
-            return;
-        }
-        
-        const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                rider: riderName,
-                work_type: workType
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            if (customRiderMessage) {
-                customRiderMessage.textContent = '❌ ' + (error.error || 'Erreur');
-                customRiderMessage.className = 'custom-rider-message error';
-            }
-            hideLoading();
-            return;
-        }
-        
-        const data = await response.json();
-        if (data.success) {
-            allAssignments = data.assignments;
-            displayAssignedTasks();
-            renderCalendar();
-            
-            // Feedback utilisateur
-            if (customRiderMessage) {
-                customRiderMessage.textContent = `✅ ${riderName} - ${getWorkTypeLabel(workType)} ajouté`;
-                customRiderMessage.className = 'custom-rider-message success';
-            }
-            showToast(`✅ ${riderName} - ${getWorkTypeLabel(workType)} ajouté`);
-            
-            // Réinitialiser les champs
-            customRiderInput.value = '';
-            customWorkTypeSelect.value = '';
-            
-            // Garder le focus sur l'input pour ajouter un autre rider
-            setTimeout(() => {
-                customRiderInput.focus();
-            }, 500);
-        } else {
-            if (customRiderMessage) {
-                customRiderMessage.textContent = '❌ Erreur lors de la sauvegarde';
-                customRiderMessage.className = 'custom-rider-message error';
-            }
-        }
-    } catch (error) {
-        console.error('Erreur:', error);
-        if (customRiderMessage) {
-            customRiderMessage.textContent = '❌ Erreur de connexion';
-            customRiderMessage.className = 'custom-rider-message error';
-        }
-    } finally {
-        hideLoading();
-    }
-}
-
-// ===== AJOUTER TÂCHE (ancienne interface) =====
-async function addRiderToDay(rider) {
-    showLoading();
-    try {
-        let tasks = [];
-        if (allAssignments[selectedDate] && allAssignments[selectedDate].tasks) {
-            tasks = allAssignments[selectedDate].tasks.slice();
-        }
-
-        if (tasks.find(t => t.rider === rider)) {
-            showToast('⚠️ Ce cavalier est déjà assigné');
-            return;
-        }
-
-        const response = await fetch(API_URL + '/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                date: selectedDate,
-                tasks: tasks,
-                comment: allAssignments[selectedDate]?.comment || ''
-            })
-        });
-
-        if (!response.ok) throw new Error('Erreur réseau');
-        const data = await response.json();
-
-        if (data.success) {
-            allAssignments = data.assignments;
-            displayAssignedTasks();
-            loadRiderButtons();
-            renderCalendar();
-            showToast('✅ Cavalier ajouté');
-        } else {
-            showToast('❌ Erreur lors de la sauvegarde');
-        }
-    } catch (error) {
-        console.error('Erreur:', error);
-        showToast('❌ Erreur de connexion');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ===== SUPPRIMER TÂCHE (nouvelle interface) =====
-async function removeTask(date, index) {
-    showLoading();
-    try {
-        if (!allAssignments[date] || !Array.isArray(allAssignments[date].tasks)) {
+        if (!allAssignments[date] || !Array.isArray(allAssignments[date].assignments)) {
             showToast('⚠️ Aucune tâche pour cette date');
             return;
         }
 
-        const tasks = allAssignments[date].tasks;
-        if (index < 0 || index >= tasks.length) {
+        const dayAssignments = allAssignments[date].assignments;
+        if (index < 0 || index >= dayAssignments.length) {
             showToast('⚠️ Index invalide');
             return;
         }
 
-        const response = await fetch(`${API_URL}/assignments/${date}/tasks/${index}`, {
+        const response = await fetch(`${API_URL}/assignments/${date}/${index}`, {
             method: 'DELETE'
         });
 
@@ -807,47 +542,10 @@ async function removeTask(date, index) {
         if (data.success) {
             allAssignments = data.assignments;
             if (selectedDate === date) {
-                displayAssignedTasks();
-                loadRiderButtons();
+                displayAssignments();
             }
             renderCalendar();
             showToast('✅ Tâche retirée');
-        }
-    } catch (error) {
-        console.error('Erreur:', error);
-        showToast('❌ Erreur de connexion');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ===== COMMENTAIRE =====
-async function saveComment() {
-    showLoading();
-    try {
-        const comment = document.getElementById('commentText').value.trim();
-
-        const tasks = allAssignments[selectedDate]?.tasks || [];
-
-        const response = await fetch(API_URL + '/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                date: selectedDate,
-                tasks: tasks,
-                comment: comment
-            })
-        });
-
-        if (!response.ok) throw new Error('Erreur réseau');
-        const data = await response.json();
-
-        if (data.success) {
-            allAssignments = data.assignments;
-            renderCalendar();
-            showToast('💾 Commentaire enregistré');
-        } else {
-            showToast('❌ Erreur lors de la sauvegarde');
         }
     } catch (error) {
         console.error('Erreur:', error);

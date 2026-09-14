@@ -14,8 +14,8 @@ def get_assignments():
         return jsonify({'error': str(e)}), 500
 
 @assignments_bp.route('', methods=['POST'])
-def save_assignment():
-    """Save the tasks assigned to a date."""
+def save_assignments():
+    """Replace all assignments for a date."""
     try:
         data = request.get_json() or {}
         date = data.get('date')
@@ -25,33 +25,33 @@ def save_assignment():
 
         assignments = DataService.read_assignments()
 
-        raw_tasks = data.get('tasks', []) or []
-        cleaned_tasks = []
+        raw_assignments = data.get('assignments', []) or []
+        cleaned_assignments = []
 
-        for task in raw_tasks:
-            if not isinstance(task, dict):
+        for assignment in raw_assignments:
+            if not isinstance(assignment, dict):
                 continue
 
-            rider = (task.get('rider') or '').strip()
-            work_type = (task.get('work_type') or '').strip()
-            task_comment = task.get('comment', '')
+            rider = (assignment.get('rider') or '').strip()
+            work_type = (assignment.get('work_type') or '').strip()
+            comment = (assignment.get('comment') or '').strip()
 
             if not rider or not work_type:
                 continue
 
-            cleaned_tasks.append({
+            cleaned_assignments.append({
                 'rider': rider,
                 'work_type': work_type,
-                'comment': task_comment or ''
+                'comment': comment
             })
 
-        if (not cleaned_tasks):
+        if not cleaned_assignments:
             if date in assignments:
                 del assignments[date]
                 print(f"Deleted assignment for {date}")
         else:
             assignments[date] = {
-                'tasks': cleaned_tasks
+                'assignments': cleaned_assignments
             }
             print(f"Saved assignment for {date}: {assignments[date]}")
 
@@ -60,17 +60,17 @@ def save_assignment():
 
         return jsonify({'success': True, 'assignments': assignments})
     except Exception as e:
-        print(f"Error in save_assignment: {e}")
+        print(f"Error in save_assignments: {e}")
         return jsonify({'error': str(e)}), 500
 
-@assignments_bp.route('/<date>/tasks', methods=['POST'])
-def add_task(date):
-    """Add a rider, work type, and optional comment to a date."""
+@assignments_bp.route('/<date>', methods=['POST'])
+def add_assignment(date):
+    """Add one rider/work type/comment assignment to a date."""
     try:
         data = request.get_json() or {}
         rider = (data.get('rider') or '').strip()
         work_type = (data.get('work_type') or '').strip()
-        comment = data.get('comment', '')
+        comment = (data.get('comment') or '').strip()
 
         if not rider or not work_type:
             return jsonify({'error': 'Le cavalier et le type de travail sont requis'}), 400
@@ -78,56 +78,60 @@ def add_task(date):
         assignments = DataService.read_assignments()
 
         if date not in assignments:
-            assignments[date] = {'tasks': []}
+            assignments[date] = {'assignments': []}
 
-        tasks = assignments[date].get('tasks', [])
-        for task in tasks:
-            if task.get('rider') == rider and task.get('work_type') == work_type:
-                return jsonify({'error': 'Cette tâche existe déjà'}), 400
+        day_assignments = assignments[date].get('assignments', [])
+        for assignment in day_assignments:
+            if (
+                assignment.get('rider') == rider
+                and assignment.get('work_type') == work_type
+                and (assignment.get('comment') or '').strip() == comment
+            ):
+                return jsonify({'error': 'Cet assignment existe déjà'}), 400
 
-        tasks.append({
+        day_assignments.append({
             'rider': rider,
             'work_type': work_type,
-            'comment': comment or ''
+            'comment': comment
         })
 
-        assignments[date]['tasks'] = tasks
+        assignments[date]['assignments'] = day_assignments
 
         if not DataService.write_assignments(assignments):
             return jsonify({'error': 'Erreur lors de la sauvegarde'}), 500
 
-        print(f"Added task for {date}: {rider} - {work_type}")
+        print(f"Added assignment for {date}: {rider} - {work_type}")
         return jsonify({'success': True, 'assignments': assignments})
     except Exception as e:
-        print(f"Error in add_task: {e}")
+        print(f"Error in add_assignment: {e}")
         return jsonify({'error': str(e)}), 500
 
-@assignments_bp.route('/<date>/tasks/<int:task_index>', methods=['DELETE'])
-def remove_task(date, task_index):
-    """Remove a task by index."""
+@assignments_bp.route('/<date>/<int:assignment_index>', methods=['DELETE'])
+def remove_assignment(date, assignment_index):
+    """Remove an assignment by index."""
     try:
         assignments = DataService.read_assignments()
 
-        if date not in assignments or 'tasks' not in assignments[date]:
-            return jsonify({'error': 'Aucune tâche pour cette date'}), 400
+        if date not in assignments or 'assignments' not in assignments[date]:
+            return jsonify({'error': 'Aucun assignment pour cette date'}), 400
 
-        tasks = assignments[date]['tasks']
-        if task_index < 0 or task_index >= len(tasks):
+        day_assignments = assignments[date]['assignments']
+        if assignment_index < 0 or assignment_index >= len(day_assignments):
             return jsonify({'error': 'Index invalide'}), 400
 
-        tasks.pop(task_index)
+        day_assignments.pop(assignment_index)
 
-        if len(tasks) == 0:
+        if not day_assignments:
             del assignments[date]
             print(f"Deleted assignment for {date}")
         else:
-            assignments[date]['tasks'] = tasks
+            assignments[date]['assignments'] = day_assignments
 
         if not DataService.write_assignments(assignments):
             return jsonify({'error': 'Erreur lors de la sauvegarde'}), 500
 
-        print(f"Removed task at index {task_index} for {date}")
+        print(f"Removed assignment at index {assignment_index} for {date}")
         return jsonify({'success': True, 'assignments': assignments})
     except Exception as e:
-        print(f"Error in remove_task: {e}")
+        print(f"Error in remove_assignment: {e}")
         return jsonify({'error': str(e)}), 500

@@ -24,9 +24,9 @@ def get_stats():
                     if date_parts[0] != year or date_parts[1] != month:
                         continue
 
-            for task in data.get('tasks', []):
-                rider = task.get('rider', '')
-                work_type = task.get('work_type', '')
+            for assignment in data.get('assignments', []):
+                rider = assignment.get('rider', '')
+                work_type = assignment.get('work_type', '')
 
                 if rider:
                     stats[rider] = stats.get(rider, 0) + 1

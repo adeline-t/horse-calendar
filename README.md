@@ -53,7 +53,7 @@ The page names above match the labels displayed in the application.
 Application data is stored in:
 
 - `data/riders.json` for riders
-- `data/assignments.json` for scheduled tasks
+- `data/assignments.json` for scheduled assignments
 
 These files are created automatically on first launch if they do not exist. The application process must have permission to write to them. Back them up before updating or redeploying the application.
 
@@ -67,15 +67,15 @@ These files are created automatically on first launch if they do not exist. The 
 | `PUT` | `/api/riders/<index>` | Updates a rider |
 | `DELETE` | `/api/riders/<index>` | Deletes a rider |
 | `GET` | `/api/assignments` | Returns the complete schedule |
-| `POST` | `/api/assignments` | Saves the tasks for a date |
-| `POST` | `/api/assignments/<date>/tasks` | Adds a task to a date |
-| `DELETE` | `/api/assignments/<date>/tasks/<index>` | Deletes a task |
+| `POST` | `/api/assignments` | Replaces all assignments for a date |
+| `POST` | `/api/assignments/<date>` | Adds an assignment to a date |
+| `DELETE` | `/api/assignments/<date>/<index>` | Deletes an assignment |
 | `GET` | `/api/stats?month=MM&year=YYYY` | Returns statistics |
 
-Write requests use JSON. For example, to add a task:
+Write requests use JSON. Each assignment contains a `rider`, a `work_type`, and a `comment`. For example:
 
 ```bash
-curl -X POST http://localhost:5000/api/assignments/2026-09-14/tasks \
+curl -X POST http://localhost:5000/api/assignments/2026-09-14 \
   -H "Content-Type: application/json" \
   -d '{"rider":"Alice","work_type":"dressage","comment":"Light session"}'
 ```

@@ -54,96 +54,63 @@
         </div>
     </div>
 
-    <!-- Modal pour gérer un jour -->
+    <!-- Modal for managing one day's assignments -->
     <div id="modal" class="modal" aria-hidden="true">
         <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modalDate">
             <button class="close" aria-label="Fermer">×</button>
-            <h3 id="modalDate" class="modal-title"></h3>
+            <header class="assignment-modal-header">
+                <p class="modal-eyebrow">Planning du jour</p>
+                <h3 id="modalDate" class="modal-title"></h3>
+                <p id="assignmentSummary" class="assignment-summary"></p>
+            </header>
 
-            <!-- Type de travail -->
-            <section class="work-type-section">
-                <h4>
-                    <span class="section-icon">💪</span>
-                    Type de travail
-                </h4>
-                <select id="workTypeSelect" class="work-type-select" aria-label="Type de travail">
-                    <option value="">-- Non spécifié --</option>
-                </select>
-            </section>
-
-            <!-- Riders assignés -->
-            <section class="assigned-riders">
-                <h4>
-                    <span class="section-icon">✅</span>
-                    Cavaliers assignés
+            <section class="assignment-list-section" aria-labelledby="assignmentListTitle">
+                <div class="section-heading-row">
+                    <h4 id="assignmentListTitle">Assignments</h4>
                     <span id="assignedCount" class="count-badge">0</span>
-                </h4>
-                <div id="assignedRiders" class="assigned-riders-list" aria-live="polite">
-                    <p class="empty-message">Aucun cavalier assigné</p>
                 </div>
+                <div id="assignedRiders" class="assignment-list" aria-live="polite"></div>
             </section>
 
-            <!-- Ajouter des riders -->
-            <section class="add-rider-section">
-                <h4>
-                    <span class="section-icon">➕</span>
-                    Ajouter un cavalier
-                </h4>
-                <div id="riderButtons" class="rider-buttons">
-                    <!-- Généré par JS -->
+            <section class="assignment-composer" aria-labelledby="assignmentComposerTitle">
+                <div class="composer-heading">
+                    <span class="composer-icon" aria-hidden="true">＋</span>
+                    <div>
+                        <h4 id="assignmentComposerTitle">Nouvel assignment</h4>
+                        <p>Associer un cavalier, un type de travail et un commentaire.</p>
+                    </div>
                 </div>
-            </section>
 
-            <!-- Ajouter un rider personnalisé -->
-            <section class="custom-rider-section">
-                <h4>
-                    <span class="section-icon">✏️</span>
-                    Ou entrer un cavalier personnalisé
-                </h4>
-                <div class="custom-rider-input-group">
-                    <input 
-                        type="text" 
-                        id="customRiderInput"
-                        class="custom-rider-input"
-                        placeholder="Nom du cavalier..."
-                        maxlength="50"
-                        aria-label="Nom du cavalier"
-                    />
-                    <select id="customWorkTypeSelect" class="custom-work-type-select" aria-label="Type de travail">
-                        <option value="">-- Sélectionner le type --</option>
-                    </select>
-                    <button id="addCustomRiderBtn" class="btn btn-primary" style="flex-shrink: 0;">
-                        Ajouter
-                    </button>
-                </div>
-                <div id="customRiderMessage" class="custom-rider-message"></div>
-            </section>
+                <div class="assignment-form-grid">
+                    <label class="assignment-field">
+                        <span>Cavalier</span>
+                        <select id="assignmentRiderSelect">
+                            <option value="">Sélectionner un cavalier</option>
+                        </select>
+                    </label>
 
-            <!-- Commentaire -->
-            <section class="comment-section">
-                <h4>
-                    <span class="section-icon">📝</span>
-                    Commentaire
-                </h4>
-                <textarea
-                    id="commentText"
-                    class="comment-textarea"
-                    placeholder="Ajouter un commentaire sur la séance..."
-                    rows="4"
-                    maxlength="500"
-                    aria-label="Commentaire"
-                ></textarea>
-                <div class="comment-actions">
-                    <button id="saveCommentBtn" class="btn btn-primary">
-                        💾 Enregistrer
-                    </button>
-                    <button id="clearCommentBtn" class="btn btn-secondary">
-                        🗑️ Effacer
-                    </button>
+                    <label id="customRiderField" class="assignment-field assignment-field-full" hidden>
+                        <span>Nom du cavalier</span>
+                        <input id="assignmentCustomRider" type="text" maxlength="50" placeholder="Saisir un nom">
+                    </label>
+
+                    <label class="assignment-field">
+                        <span>Type de travail</span>
+                        <select id="assignmentWorkTypeSelect">
+                            <option value="">Sélectionner un type</option>
+                        </select>
+                    </label>
+
+                    <label class="assignment-field assignment-field-full">
+                        <span>Commentaire <small>(optionnel)</small></span>
+                        <textarea id="assignmentComment" rows="3" maxlength="500" placeholder="Précisions sur la séance…"></textarea>
+                    </label>
                 </div>
-                <div class="char-counter">
-                    <span id="charCount">0</span>/500 caractères
-                </div>
+
+                <div id="assignmentFormMessage" class="assignment-form-message" role="status"></div>
+                <button id="addAssignmentBtn" class="btn btn-primary assignment-submit">
+                    Ajouter l'assignment
+                </button>
             </section>
 
             <div class="modal-actions">
