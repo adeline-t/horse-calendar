@@ -1,20 +1,20 @@
 import os
 
 class Config:
-    # Chemins absolus pour PythonAnywhere
+    # Absolute paths for deployment environments such as PythonAnywhere.
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_DIR = os.path.join(BASE_DIR, 'data')
 
     ASSIGNMENTS_FILE = os.path.join(DATA_DIR, 'assignments.json')
-    CAVALIERS_FILE = os.path.join(DATA_DIR, 'cavaliers.json')
+    RIDERS_FILE = os.path.join(DATA_DIR, 'riders.json')
 
-    # Configuration serveur
-    DEBUG = False  # ⚠️ Mettre False en production sur PythonAnywhere
+    # Server configuration.
+    DEBUG = False  # Keep disabled in production.
     HOST = '0.0.0.0'
     PORT = 5000
 
     @staticmethod
     def init_directories():
-        """Créer les dossiers nécessaires s'ils n'existent pas"""
+        """Create required directories when they do not exist."""
         os.makedirs(Config.DATA_DIR, exist_ok=True)
-        print(f"✅ Dossier data créé/vérifié : {Config.DATA_DIR}")
+        print(f"✅ Data directory ready: {Config.DATA_DIR}")

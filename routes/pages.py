@@ -6,9 +6,9 @@ pages_bp = Blueprint('pages', __name__)
 def index():
     return render_template('index.html')
 
-@pages_bp.route('/cavaliers.html')
-def cavaliers_page():
-    return render_template('cavaliers.html')
+@pages_bp.route('/riders.html')
+def riders_page():
+    return render_template('riders.html')
 
 @pages_bp.route('/stats.html')
 def stats_page():

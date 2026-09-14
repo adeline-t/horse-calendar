@@ -2,13 +2,13 @@ const API_URL = '/api';
 let editingIndex = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadCavaliers();
+    loadRiders();
 
-    document.getElementById('addCavalierBtn').addEventListener('click', addCavalier);
+    document.getElementById('addRiderBtn').addEventListener('click', addRider);
 
-    document.getElementById('cavalierName').addEventListener('keypress', function(e) {
+    document.getElementById('riderName').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            addCavalier();
+            addRider();
         }
     });
 
@@ -35,46 +35,46 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-async function loadCavaliers() {
+async function loadRiders() {
     try {
-        const response = await fetch(API_URL + '/cavaliers');
-        const cavaliers = await response.json();
+        const response = await fetch(API_URL + '/riders');
+        const riders = await response.json();
 
-        const list = document.getElementById('cavaliersList');
+        const list = document.getElementById('ridersList');
         list.innerHTML = '';
 
-        if (cavaliers.length === 0) {
+        if (riders.length === 0) {
             list.innerHTML = '<li style="text-align: center; color: #999;">Aucun cavalier pour le moment</li>';
             return;
         }
 
         const today = new Date().toISOString().split('T')[0];
 
-        cavaliers.forEach((cavalier, index) => {
+        riders.forEach((rider, index) => {
             const li = document.createElement('li');
 
             // Info principale
             const mainInfo = document.createElement('div');
-            mainInfo.className = 'cavalier-main-info';
+            mainInfo.className = 'rider-main-info';
 
             const info = document.createElement('div');
-            info.className = 'cavalier-info';
+            info.className = 'rider-info';
 
             const colorPicker = document.createElement('input');
             colorPicker.type = 'color';
-            colorPicker.className = 'cavalier-color-indicator';
-            colorPicker.value = cavalier.color || '#667eea';
+            colorPicker.className = 'rider-color-indicator';
+            colorPicker.value = rider.color || '#667eea';
             colorPicker.title = 'Changer la couleur';
-            colorPicker.addEventListener('change', () => updateCavalierColor(index, colorPicker.value));
+            colorPicker.addEventListener('change', () => updateRiderColor(index, colorPicker.value));
 
             const name = document.createElement('span');
-            name.textContent = cavalier.name;
+            name.textContent = rider.name;
             name.style.fontWeight = 'bold';
 
             // Statut
-            const status = getCavalierStatus(cavalier, today);
+            const status = getRiderStatus(rider, today);
             const statusBadge = document.createElement('span');
-            statusBadge.className = 'cavalier-status status-' + status.class;
+            statusBadge.className = 'rider-status status-' + status.class;
             statusBadge.textContent = status.text;
 
             info.appendChild(colorPicker);
@@ -83,17 +83,17 @@ async function loadCavaliers() {
 
             // Actions
             const actions = document.createElement('div');
-            actions.className = 'cavalier-actions';
+            actions.className = 'rider-actions';
 
             const editBtn = document.createElement('button');
             editBtn.className = 'edit-btn';
             editBtn.textContent = '📅 Dates';
-            editBtn.addEventListener('click', () => openEditModal(index, cavalier));
+            editBtn.addEventListener('click', () => openEditModal(index, rider));
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.textContent = 'Supprimer';
-            deleteBtn.addEventListener('click', () => deleteCavalier(index));
+            deleteBtn.addEventListener('click', () => deleteRider(index));
 
             actions.appendChild(editBtn);
             actions.appendChild(deleteBtn);
@@ -103,20 +103,20 @@ async function loadCavaliers() {
 
             // Dates
             const datesDiv = document.createElement('div');
-            datesDiv.className = 'cavalier-dates';
+            datesDiv.className = 'rider-dates';
 
-            if (cavalier.start_date || cavalier.end_date) {
-                if (cavalier.start_date) {
+            if (rider.start_date || rider.end_date) {
+                if (rider.start_date) {
                     const startItem = document.createElement('div');
-                    startItem.className = 'cavalier-date-item';
-                    startItem.innerHTML = '📅 Début: ' + formatDate(cavalier.start_date);
+                    startItem.className = 'rider-date-item';
+                    startItem.innerHTML = '📅 Début: ' + formatDate(rider.start_date);
                     datesDiv.appendChild(startItem);
                 }
 
-                if (cavalier.end_date) {
+                if (rider.end_date) {
                     const endItem = document.createElement('div');
-                    endItem.className = 'cavalier-date-item';
-                    endItem.innerHTML = '🏁 Fin: ' + formatDate(cavalier.end_date);
+                    endItem.className = 'rider-date-item';
+                    endItem.innerHTML = '🏁 Fin: ' + formatDate(rider.end_date);
                     datesDiv.appendChild(endItem);
                 }
             } else {
@@ -137,9 +137,9 @@ async function loadCavaliers() {
     }
 }
 
-function getCavalierStatus(cavalier, today) {
-    const startDate = cavalier.start_date;
-    const endDate = cavalier.end_date;
+function getRiderStatus(rider, today) {
+    const startDate = rider.start_date;
+    const endDate = rider.end_date;
 
     if (!startDate && !endDate) {
         return { class: 'active', text: 'Actif' };
@@ -162,11 +162,11 @@ function formatDate(dateStr) {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function openEditModal(index, cavalier) {
+function openEditModal(index, rider) {
     editingIndex = index;
-    document.getElementById('editCavalierName').textContent = cavalier.name;
-    document.getElementById('editStartDate').value = cavalier.start_date || '';
-    document.getElementById('editEndDate').value = cavalier.end_date || '';
+    document.getElementById('editRiderName').textContent = rider.name;
+    document.getElementById('editStartDate').value = rider.start_date || '';
+    document.getElementById('editEndDate').value = rider.end_date || '';
     document.getElementById('editModal').style.display = 'block';
 }
 
@@ -181,7 +181,7 @@ async function saveEdit() {
             return;
         }
 
-        const response = await fetch(API_URL + '/cavaliers/' + editingIndex, {
+        const response = await fetch(API_URL + '/riders/' + editingIndex, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -196,7 +196,7 @@ async function saveEdit() {
 
         if (data.success) {
             document.getElementById('editModal').style.display = 'none';
-            loadCavaliers();
+            loadRiders();
         } else {
             alert('Erreur lors de la mise à jour');
         }
@@ -206,11 +206,11 @@ async function saveEdit() {
     }
 }
 
-async function addCavalier() {
-    const nameInput = document.getElementById('cavalierName');
-    const colorInput = document.getElementById('cavalierColor');
-    const startDateInput = document.getElementById('cavalierStartDate');
-    const endDateInput = document.getElementById('cavalierEndDate');
+async function addRider() {
+    const nameInput = document.getElementById('riderName');
+    const colorInput = document.getElementById('riderColor');
+    const startDateInput = document.getElementById('riderStartDate');
+    const endDateInput = document.getElementById('riderEndDate');
 
     const name = nameInput.value.trim();
     const color = colorInput.value;
@@ -229,7 +229,7 @@ async function addCavalier() {
     }
 
     try {
-        const response = await fetch(API_URL + '/cavaliers', {
+        const response = await fetch(API_URL + '/riders', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -249,7 +249,7 @@ async function addCavalier() {
             colorInput.value = '#667eea';
             startDateInput.value = '';
             endDateInput.value = '';
-            loadCavaliers();
+            loadRiders();
         } else {
             alert(data.error || 'Erreur lors de l\'ajout');
         }
@@ -259,20 +259,20 @@ async function addCavalier() {
     }
 }
 
-async function deleteCavalier(index) {
+async function deleteRider(index) {
     if (!confirm('Voulez-vous vraiment supprimer ce cavalier ?')) {
         return;
     }
 
     try {
-        const response = await fetch(API_URL + '/cavaliers/' + index, {
+        const response = await fetch(API_URL + '/riders/' + index, {
             method: 'DELETE'
         });
 
         const data = await response.json();
 
         if (data.success) {
-            loadCavaliers();
+            loadRiders();
         } else {
             alert('Erreur lors de la suppression');
         }
@@ -282,9 +282,9 @@ async function deleteCavalier(index) {
     }
 }
 
-async function updateCavalierColor(index, color) {
+async function updateRiderColor(index, color) {
     try {
-        const response = await fetch(API_URL + '/cavaliers/' + index, {
+        const response = await fetch(API_URL + '/riders/' + index, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -296,7 +296,7 @@ async function updateCavalierColor(index, color) {
 
         if (!data.success) {
             alert('Erreur lors de la mise à jour de la couleur');
-            loadCavaliers();
+            loadRiders();
         }
     } catch (error) {
         console.error('Erreur:', error);

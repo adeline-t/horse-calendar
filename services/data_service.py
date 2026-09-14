@@ -3,129 +3,129 @@ import os
 from config import Config
 
 class DataService:
-    """Service pour gérer la lecture/écriture des fichiers JSON"""
+    """Read and write the application's JSON data files."""
 
     @staticmethod
     def init_files():
-        """Initialiser les fichiers de données s'ils n'existent pas"""
+        """Create missing data files with default content."""
 
-        # Créer cavaliers.json avec des données par défaut si nécessaire
-        if not os.path.exists(Config.CAVALIERS_FILE):
-            default_cavaliers = [
+        # Create riders.json with default data when necessary.
+        if not os.path.exists(Config.RIDERS_FILE):
+            default_riders = [
                 {"name": "Alice", "color": "#FF6B6B", "active_from": "2020-01-01"},
                 {"name": "Bob", "color": "#4ECDC4", "active_from": "2021-06-15"},
                 {"name": "Charlie", "color": "#45B7D1", "active_from": "2022-03-10"}
             ]
-            with open(Config.CAVALIERS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(default_cavaliers, f, ensure_ascii=False, indent=2)
-            print(f"✅ Fichier créé : {Config.CAVALIERS_FILE}")
+            with open(Config.RIDERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(default_riders, f, ensure_ascii=False, indent=2)
+            print(f"✅ Created file: {Config.RIDERS_FILE}")
 
-        # Créer assignments.json vide
+        # Create an empty assignments.json file.
         if not os.path.exists(Config.ASSIGNMENTS_FILE):
             with open(Config.ASSIGNMENTS_FILE, 'w', encoding='utf-8') as f:
                 json.dump({}, f, ensure_ascii=False, indent=2)
-            print(f"✅ Fichier créé : {Config.ASSIGNMENTS_FILE}")
+            print(f"✅ Created file: {Config.ASSIGNMENTS_FILE}")
 
-        # Vérifier les permissions (important pour PythonAnywhere)
+        # Verify file access, especially in hosted environments.
         try:
-            # Tester l'écriture
-            DataService.read_cavaliers()
+            # Test access through the normal read methods.
+            DataService.read_riders()
             DataService.read_assignments()
-            print(f"✅ Permissions fichiers OK")
+            print("✅ Data file permissions verified")
         except Exception as e:
-            print(f"⚠️ Problème de permissions : {e}")
+            print(f"⚠️ Data file permission issue: {e}")
 
     @staticmethod
-    def read_cavaliers():
-        """Lire le fichier cavaliers.json"""
+    def read_riders():
+        """Read riders.json."""
         try:
-            if not os.path.exists(Config.CAVALIERS_FILE):
-                print(f"⚠️ Fichier non trouvé : {Config.CAVALIERS_FILE}")
+            if not os.path.exists(Config.RIDERS_FILE):
+                print(f"⚠️ File not found: {Config.RIDERS_FILE}")
                 return []
 
-            with open(Config.CAVALIERS_FILE, 'r', encoding='utf-8') as f:
+            with open(Config.RIDERS_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 return data if isinstance(data, list) else []
         except json.JSONDecodeError as e:
-            print(f"❌ Erreur JSON cavaliers: {e}")
+            print(f"❌ Invalid rider JSON: {e}")
             return []
         except Exception as e:
-            print(f"❌ Erreur lecture cavaliers: {e}")
+            print(f"❌ Error reading riders: {e}")
             return []
 
     @staticmethod
-    def write_cavaliers(cavaliers):
-        """Écrire dans le fichier cavaliers.json"""
+    def write_riders(riders):
+        """Write riders.json."""
         try:
-            # Créer le dossier parent si nécessaire
-            os.makedirs(os.path.dirname(Config.CAVALIERS_FILE), exist_ok=True)
+            # Create the parent directory when necessary.
+            os.makedirs(os.path.dirname(Config.RIDERS_FILE), exist_ok=True)
 
-            # Écrire avec permissions explicites
-            with open(Config.CAVALIERS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(cavaliers, f, ensure_ascii=False, indent=2)
+            # Write UTF-8 JSON.
+            with open(Config.RIDERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(riders, f, ensure_ascii=False, indent=2)
 
-            # Vérifier que l'écriture a réussi
-            if os.path.exists(Config.CAVALIERS_FILE):
-                print(f"✅ Cavaliers sauvegardés : {len(cavaliers)} entrées")
+            # Verify that the target exists after writing.
+            if os.path.exists(Config.RIDERS_FILE):
+                print(f"✅ Saved {len(riders)} riders")
                 return True
             else:
-                print(f"❌ Échec sauvegarde cavaliers")
+                print("❌ Failed to save riders")
                 return False
 
         except Exception as e:
-            print(f"❌ Erreur écriture cavaliers: {e}")
+            print(f"❌ Error writing riders: {e}")
             return False
 
     @staticmethod
     def read_assignments():
-        """Lire le fichier assignments.json"""
+        """Read assignments.json."""
         try:
             if not os.path.exists(Config.ASSIGNMENTS_FILE):
-                print(f"⚠️ Fichier non trouvé : {Config.ASSIGNMENTS_FILE}")
+                print(f"⚠️ File not found: {Config.ASSIGNMENTS_FILE}")
                 return {}
 
             with open(Config.ASSIGNMENTS_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 return data if isinstance(data, dict) else {}
         except json.JSONDecodeError as e:
-            print(f"❌ Erreur JSON assignments: {e}")
+            print(f"❌ Invalid assignment JSON: {e}")
             return {}
         except Exception as e:
-            print(f"❌ Erreur lecture assignments: {e}")
+            print(f"❌ Error reading assignments: {e}")
             return {}
 
     @staticmethod
     def write_assignments(assignments):
-        """Écrire dans le fichier assignments.json"""
+        """Write assignments.json."""
         try:
-            # Créer le dossier parent si nécessaire
+            # Create the parent directory when necessary.
             os.makedirs(os.path.dirname(Config.ASSIGNMENTS_FILE), exist_ok=True)
 
-            # Écrire avec permissions explicites
+            # Write UTF-8 JSON.
             with open(Config.ASSIGNMENTS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(assignments, f, ensure_ascii=False, indent=2)
 
-            # Vérifier que l'écriture a réussi
+            # Verify that the target exists after writing.
             if os.path.exists(Config.ASSIGNMENTS_FILE):
-                print(f"✅ Assignments sauvegardés : {len(assignments)} dates")
+                print(f"✅ Saved assignments for {len(assignments)} dates")
                 return True
             else:
-                print(f"❌ Échec sauvegarde assignments")
+                print("❌ Failed to save assignments")
                 return False
 
         except Exception as e:
-            print(f"❌ Erreur écriture assignments: {e}")
+            print(f"❌ Error writing assignments: {e}")
             return False
 
     @staticmethod
     def get_file_info():
-        """Obtenir des informations sur les fichiers (debug)"""
+        """Return diagnostic information about data files."""
         info = {
-            'cavaliers': {
-                'exists': os.path.exists(Config.CAVALIERS_FILE),
-                'path': Config.CAVALIERS_FILE,
-                'readable': os.access(Config.CAVALIERS_FILE, os.R_OK) if os.path.exists(Config.CAVALIERS_FILE) else False,
-                'writable': os.access(Config.CAVALIERS_FILE, os.W_OK) if os.path.exists(Config.CAVALIERS_FILE) else False,
+            'riders': {
+                'exists': os.path.exists(Config.RIDERS_FILE),
+                'path': Config.RIDERS_FILE,
+                'readable': os.access(Config.RIDERS_FILE, os.R_OK) if os.path.exists(Config.RIDERS_FILE) else False,
+                'writable': os.access(Config.RIDERS_FILE, os.W_OK) if os.path.exists(Config.RIDERS_FILE) else False,
             },
             'assignments': {
                 'exists': os.path.exists(Config.ASSIGNMENTS_FILE),

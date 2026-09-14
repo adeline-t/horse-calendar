@@ -13,28 +13,28 @@
     </nav>
 
     <div class="container">
-        <div class="cavalier-form">
+        <div class="rider-form">
             <h2>Ajouter un cavalier</h2>
             <div class="form-row">
-                <input type="text" id="cavalierName" placeholder="Nom du cavalier">
-                <input type="color" id="cavalierColor" value="#667eea" title="Choisir une couleur">
+                <input type="text" id="riderName" placeholder="Nom du cavalier">
+                <input type="color" id="riderColor" value="#667eea" title="Choisir une couleur">
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Date de début (optionnel)</label>
-                    <input type="date" id="cavalierStartDate">
+                    <input type="date" id="riderStartDate">
                 </div>
                 <div class="form-group">
                     <label>Date de fin (optionnel)</label>
-                    <input type="date" id="cavalierEndDate">
+                    <input type="date" id="riderEndDate">
                 </div>
             </div>
-            <button id="addCavalierBtn" class="btn">Ajouter</button>
+            <button id="addRiderBtn" class="btn">Ajouter</button>
         </div>
 
-        <div class="cavalier-list">
+        <div class="rider-list">
             <h2>Liste des cavaliers</h2>
-            <ul id="cavaliersList"></ul>
+            <ul id="ridersList"></ul>
         </div>
     </div>
 
@@ -42,7 +42,7 @@
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-edit">×</span>
-            <h3>Modifier <span id="editCavalierName"></span></h3>
+            <h3>Modifier <span id="editRiderName"></span></h3>
 
             <div class="form-group">
                 <label>Date de début</label>
@@ -63,6 +63,6 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='cavaliers.js') }}"></script>
+    <script src="{{ url_for('static', filename='riders.js') }}"></script>
 </body>
 </html>

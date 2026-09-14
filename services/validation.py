@@ -1,9 +1,9 @@
 class ValidationService:
-    """Service pour valider les données"""
+    """Validate API input data."""
 
     @staticmethod
-    def validate_cavalier_name(name):
-        """Valider le nom d'un cavalier"""
+    def validate_rider_name(name):
+        """Validate a rider name."""
         if not name or not isinstance(name, str):
             return False, "Le nom est requis et doit être une chaîne"
         if not name.strip():
@@ -12,7 +12,7 @@ class ValidationService:
 
     @staticmethod
     def validate_color(color):
-        """Valider une couleur hexadécimale"""
+        """Validate a hexadecimal color."""
         if not isinstance(color, str) or not color.startswith('#'):
             return False, "Format de couleur invalide"
         if len(color) != 7:
@@ -21,9 +21,9 @@ class ValidationService:
 
     @staticmethod
     def validate_date(date_str):
-        """Valider une date au format YYYY-MM-DD"""
+        """Validate a date in YYYY-MM-DD format."""
         if not date_str:
-            return True, None  # Les dates vides sont acceptées
+            return True, None  # Empty dates are allowed.
 
         if not isinstance(date_str, str):
             return False, "La date doit être une chaîne"
@@ -47,20 +47,20 @@ class ValidationService:
 
     @staticmethod
     def validate_date_range(start_date, end_date):
-        """Valider une plage de dates"""
+        """Validate a date range."""
         if start_date and end_date and start_date > end_date:
             return False, "La date de fin doit être après la date de début"
         return True, None
 
     @staticmethod
-    def validate_cavalier_data(data):
-        """Valider toutes les données d'un cavalier"""
-        # Nom
-        valid, error = ValidationService.validate_cavalier_name(data.get('name', ''))
+    def validate_rider_data(data):
+        """Validate all rider fields."""
+        # Name
+        valid, error = ValidationService.validate_rider_name(data.get('name', ''))
         if not valid:
             return False, error
 
-        # Couleur
+        # Color
         valid, error = ValidationService.validate_color(data.get('color', '#667eea'))
         if not valid:
             return False, error

@@ -23,7 +23,7 @@
                 <span class="btn-icon">📊</span>
                 <span class="btn-text">Statistiques</span>
             </a>
-            <a href="/cavaliers.html" class="btn btn-nav">
+            <a href="/riders.html" class="btn btn-nav">
                 <span class="btn-icon">👥</span>
                 <span class="btn-text">Cavaliers</span>
             </a>
@@ -71,40 +71,40 @@
                 </select>
             </section>
 
-            <!-- Cavaliers assignés -->
-            <section class="assigned-cavaliers">
+            <!-- Riders assignés -->
+            <section class="assigned-riders">
                 <h4>
                     <span class="section-icon">✅</span>
                     Cavaliers assignés
                     <span id="assignedCount" class="count-badge">0</span>
                 </h4>
-                <div id="assignedCavaliers" class="assigned-cavaliers-list" aria-live="polite">
+                <div id="assignedRiders" class="assigned-riders-list" aria-live="polite">
                     <p class="empty-message">Aucun cavalier assigné</p>
                 </div>
             </section>
 
-            <!-- Ajouter des cavaliers -->
-            <section class="add-cavalier-section">
+            <!-- Ajouter des riders -->
+            <section class="add-rider-section">
                 <h4>
                     <span class="section-icon">➕</span>
                     Ajouter un cavalier
                 </h4>
-                <div id="cavalierButtons" class="cavalier-buttons">
+                <div id="riderButtons" class="rider-buttons">
                     <!-- Généré par JS -->
                 </div>
             </section>
 
-            <!-- Ajouter un cavalier personnalisé -->
-            <section class="custom-cavalier-section">
+            <!-- Ajouter un rider personnalisé -->
+            <section class="custom-rider-section">
                 <h4>
                     <span class="section-icon">✏️</span>
                     Ou entrer un cavalier personnalisé
                 </h4>
-                <div class="custom-cavalier-input-group">
+                <div class="custom-rider-input-group">
                     <input 
                         type="text" 
-                        id="customCavalierInput" 
-                        class="custom-cavalier-input" 
+                        id="customRiderInput"
+                        class="custom-rider-input"
                         placeholder="Nom du cavalier..."
                         maxlength="50"
                         aria-label="Nom du cavalier"
@@ -112,11 +112,11 @@
                     <select id="customWorkTypeSelect" class="custom-work-type-select" aria-label="Type de travail">
                         <option value="">-- Sélectionner le type --</option>
                     </select>
-                    <button id="addCustomCavalierBtn" class="btn btn-primary" style="flex-shrink: 0;">
+                    <button id="addCustomRiderBtn" class="btn btn-primary" style="flex-shrink: 0;">
                         Ajouter
                     </button>
                 </div>
-                <div id="customCavalierMessage" class="custom-cavalier-message"></div>
+                <div id="customRiderMessage" class="custom-rider-message"></div>
             </section>
 
             <!-- Commentaire -->

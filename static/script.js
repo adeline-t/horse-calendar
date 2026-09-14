@@ -2,9 +2,9 @@ const API_URL = '/api';
 let currentDate = new Date();
 let selectedDate = null;
 let allAssignments = {};
-let allCavaliers = [];
+let allRiders = [];
 let colorByName = new Map();
-let selectedCavalierForWorkType = null; // Pour tracker le cavalier en cours de sélection
+let selectedRiderForWorkType = null; // Pour tracker le rider en cours de sélection
 
 // ===== INITIALISATION =====
 function initializeWorkTypeSelect() {
@@ -73,18 +73,18 @@ function setupEventListeners() {
         workTypeSelect.addEventListener('change', () => {});  // Désactivé, on va utiliser un nouveau système
     }
 
-    // Custom cavalier button
-    const addCustomCavalierBtn = document.getElementById('addCustomCavalierBtn');
-    if (addCustomCavalierBtn) {
-        addCustomCavalierBtn.addEventListener('click', addCustomCavalier);
+    // Custom rider button
+    const addCustomRiderBtn = document.getElementById('addCustomRiderBtn');
+    if (addCustomRiderBtn) {
+        addCustomRiderBtn.addEventListener('click', addCustomRider);
     }
 
-    // Allow Enter key in custom cavalier input
-    const customCavalierInput = document.getElementById('customCavalierInput');
-    if (customCavalierInput) {
-        customCavalierInput.addEventListener('keypress', (e) => {
+    // Allow Enter key in custom rider input
+    const customRiderInput = document.getElementById('customRiderInput');
+    if (customRiderInput) {
+        customRiderInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                addCustomCavalier();
+                addCustomRider();
             }
         });
     }
@@ -98,7 +98,7 @@ function setupEventListeners() {
 async function loadData() {
     showLoading();
     try {
-        await loadCavaliers();
+        await loadRiders();
         await loadAssignments();
     } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
@@ -108,11 +108,11 @@ async function loadData() {
     }
 }
 
-async function loadCavaliers() {
-    const resp = await fetch(API_URL + '/cavaliers');
+async function loadRiders() {
+    const resp = await fetch(API_URL + '/riders');
     if (!resp.ok) throw new Error('Erreur réseau cavaliers');
-    allCavaliers = await resp.json();
-    colorByName = new Map(allCavaliers.map(c => [c.name, c.color]));
+    allRiders = await resp.json();
+    colorByName = new Map(allRiders.map(c => [c.name, c.color]));
 }
 
 async function loadAssignments() {
@@ -130,7 +130,7 @@ function getDateKey(year, month, day) {
     return year + '-' + monthStr + '-' + dayStr;
 }
 
-function getCavalierColor(name) {
+function getRiderColor(name) {
     return colorByName.get(name) || '#667eea';
 }
 
@@ -243,23 +243,23 @@ function createDayElement(day, isOtherMonth, year, month, container) {
     const assignments = allAssignments[dateKey];
 
     if (assignments) {
-        // Afficher les tâches (cavalier + work_type)
+        // Afficher les tâches (rider + work_type)
         const tasks = assignments.tasks || [];
         
         if (tasks.length > 0) {
             tasks.forEach((task, index) => {
                 const badge = document.createElement('div');
                 badge.className = 'task-badge';
-                badge.style.borderLeft = '4px solid ' + getCavalierColor(task.cavalier);
+                badge.style.borderLeft = '4px solid ' + getRiderColor(task.rider);
 
                 const taskText = document.createElement('span');
-                taskText.textContent = `${task.cavalier} ${getWorkTypeIcon(task.work_type)}`;
-                taskText.title = `${task.cavalier} - ${getWorkTypeLabel(task.work_type)}`;
+                taskText.textContent = `${task.rider} ${getWorkTypeIcon(task.work_type)}`;
+                taskText.title = `${task.rider} - ${getWorkTypeLabel(task.work_type)}`;
                 badge.appendChild(taskText);
 
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-btn';
-                removeBtn.setAttribute('aria-label', `Retirer ${task.cavalier} - ${getWorkTypeLabel(task.work_type)}`);
+                removeBtn.setAttribute('aria-label', `Retirer ${task.rider} - ${getWorkTypeLabel(task.work_type)}`);
                 removeBtn.textContent = '×';
                 removeBtn.onclick = function(event) {
                     event.stopPropagation();
@@ -331,13 +331,13 @@ function renderMobileList() {
         detailsCol.className = 'list-details';
 
         if (assignments && (assignments.tasks?.length > 0 || assignments.comment)) {
-            // Tâches (cavalier + work_type)
+            // Tâches (rider + work_type)
             if (assignments.tasks && assignments.tasks.length > 0) {
                 assignments.tasks.forEach(task => {
                     const taskDiv = document.createElement('div');
                     taskDiv.className = 'list-task';
-                    taskDiv.style.borderLeft = '4px solid ' + getCavalierColor(task.cavalier);
-                    taskDiv.innerHTML = `<strong>${task.cavalier}</strong> ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
+                    taskDiv.style.borderLeft = '4px solid ' + getRiderColor(task.rider);
+                    taskDiv.innerHTML = `<strong>${task.rider}</strong> ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
                     detailsCol.appendChild(taskDiv);
                 });
             }
@@ -374,7 +374,7 @@ async function openModal(day, month, year) {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     modalDate.textContent = date.toLocaleDateString('fr-FR', options);
 
-    // Masquer la section "Type de travail" depuis qu'on gère les types par cavalier
+    // Masquer la section "Type de travail" depuis qu'on gère les types par rider
     const workTypeSection = document.querySelector('.work-type-section');
     if (workTypeSection) {
         workTypeSection.style.display = 'none';
@@ -392,15 +392,15 @@ async function openModal(day, month, year) {
     initializeCustomWorkTypeSelect();
     
     // Réinitialiser les champs personnalisés
-    const customCavalierInput = document.getElementById('customCavalierInput');
+    const customRiderInput = document.getElementById('customRiderInput');
     const customWorkTypeSelect = document.getElementById('customWorkTypeSelect');
-    const customCavalierMessage = document.getElementById('customCavalierMessage');
-    if (customCavalierInput) customCavalierInput.value = '';
+    const customRiderMessage = document.getElementById('customRiderMessage');
+    if (customRiderInput) customRiderInput.value = '';
     if (customWorkTypeSelect) customWorkTypeSelect.value = '';
-    if (customCavalierMessage) customCavalierMessage.textContent = '';
+    if (customRiderMessage) customRiderMessage.textContent = '';
 
     displayAssignedTasks();
-    await loadCavalierButtons();
+    await loadRiderButtons();
 
     modal.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
@@ -431,42 +431,42 @@ function closeModal() {
     modal.setAttribute('aria-hidden', 'true');
 }
 
-// ===== CAVALIERS BUTTONS =====
-async function loadCavalierButtons() {
+// ===== RIDERS BUTTONS =====
+async function loadRiderButtons() {
     try {
-        const response = await fetch(API_URL + '/cavaliers/active?date=' + selectedDate);
+        const response = await fetch(API_URL + '/riders/active?date=' + selectedDate);
         if (!response.ok) throw new Error('Erreur réseau');
 
-        const cavaliers = await response.json();
-        const buttonsDiv = document.getElementById('cavalierButtons');
+        const riders = await response.json();
+        const buttonsDiv = document.getElementById('riderButtons');
         buttonsDiv.innerHTML = '';
 
-        if (cavaliers.length === 0) {
-            buttonsDiv.innerHTML = '<p class="no-cavaliers-message">Aucun cavalier actif pour cette date</p>';
+        if (riders.length === 0) {
+            buttonsDiv.innerHTML = '<p class="no-riders-message">Aucun cavalier actif pour cette date</p>';
             return;
         }
 
         const tasks = allAssignments[selectedDate]?.tasks || [];
         
-        cavaliers.forEach(cavalier => {
-            // Vérifier si ce cavalier a déjà toutes les tâches possibles
-            const cavalierTasks = tasks.filter(t => t.cavalier === cavalier.name);
-            const allWorkTypesAssigned = cavalierTasks.length > 0;
+        riders.forEach(rider => {
+            // Vérifier si ce rider a déjà toutes les tâches possibles
+            const riderTasks = tasks.filter(t => t.rider === rider.name);
+            const allWorkTypesAssigned = riderTasks.length > 0;
 
             const button = document.createElement('button');
-            button.className = 'cavalier-btn';
-            if (allWorkTypesAssigned && cavalierTasks.length >= Object.keys(WORK_TYPES).length) {
+            button.className = 'rider-btn';
+            if (allWorkTypesAssigned && riderTasks.length >= Object.keys(WORK_TYPES).length) {
                 button.classList.add('assigned');
             }
 
-            button.style.borderLeft = '4px solid ' + (cavalier.color || '#667eea');
-            button.textContent = cavalier.name;
-            if (allWorkTypesAssigned && cavalierTasks.length >= Object.keys(WORK_TYPES).length) {
+            button.style.borderLeft = '4px solid ' + (rider.color || '#667eea');
+            button.textContent = rider.name;
+            if (allWorkTypesAssigned && riderTasks.length >= Object.keys(WORK_TYPES).length) {
                 button.disabled = true;
             }
             button.setAttribute('aria-pressed', allWorkTypesAssigned ? 'true' : 'false');
 
-            button.addEventListener('click', () => showWorkTypeSelector(cavalier.name));
+            button.addEventListener('click', () => showWorkTypeSelector(rider.name));
 
             buttonsDiv.appendChild(button);
         });
@@ -478,7 +478,7 @@ async function loadCavalierButtons() {
 
 // ===== ASSIGNED TASKS =====
 function displayAssignedTasks() {
-    const container = document.getElementById('assignedCavaliers');
+    const container = document.getElementById('assignedRiders');
     const assignments = allAssignments[selectedDate];
 
     container.innerHTML = '';
@@ -492,17 +492,17 @@ function displayAssignedTasks() {
     assignments.tasks.forEach((task, index) => {
         const item = document.createElement('div');
         item.className = 'assigned-task-item';
-        item.style.borderLeft = '4px solid ' + getCavalierColor(task.cavalier);
+        item.style.borderLeft = '4px solid ' + getRiderColor(task.rider);
 
         const taskInfo = document.createElement('div');
         taskInfo.className = 'task-info';
-        taskInfo.innerHTML = `<strong>${task.cavalier}</strong> - ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
+        taskInfo.innerHTML = `<strong>${task.rider}</strong> - ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
         item.appendChild(taskInfo);
 
         const removeIcon = document.createElement('span');
         removeIcon.className = 'remove-icon';
         removeIcon.setAttribute('role', 'button');
-        removeIcon.setAttribute('aria-label', `Retirer ${task.cavalier} - ${getWorkTypeLabel(task.work_type)}`);
+        removeIcon.setAttribute('aria-label', `Retirer ${task.rider} - ${getWorkTypeLabel(task.work_type)}`);
         removeIcon.textContent = '×';
         removeIcon.onclick = () => removeTask(selectedDate, index);
         item.appendChild(removeIcon);
@@ -519,28 +519,28 @@ function updateAssignedCount(count) {
 }
 
 // ===== WORK TYPE SELECTOR =====
-function showWorkTypeSelector(cavalierName) {
-    selectedCavalierForWorkType = cavalierName;
+function showWorkTypeSelector(riderName) {
+    selectedRiderForWorkType = riderName;
     
     const tasks = allAssignments[selectedDate]?.tasks || [];
-    const cavalierWorkTypes = new Set(
-        tasks.filter(t => t.cavalier === cavalierName).map(t => t.work_type)
+    const riderWorkTypes = new Set(
+        tasks.filter(t => t.rider === riderName).map(t => t.work_type)
     );
     
-    const buttonsDiv = document.getElementById('cavalierButtons');
+    const buttonsDiv = document.getElementById('riderButtons');
     const originalContent = buttonsDiv.innerHTML;
     
     buttonsDiv.innerHTML = `<div class="work-type-selector">
         <div class="work-type-selector-header">
             <button class="back-btn" aria-label="Retour">&larr;</button>
-            <span class="selector-title">Type de travail pour ${cavalierName}</span>
+            <span class="selector-title">Type de travail pour ${riderName}</span>
         </div>
         <div class="work-type-options" id="workTypeOptions"></div>
     </div>`;
     
     const workTypeOptions = document.getElementById('workTypeOptions');
     Object.entries(WORK_TYPES).forEach(([key, value]) => {
-        const isSelected = cavalierWorkTypes.has(key);
+        const isSelected = riderWorkTypes.has(key);
         const option = document.createElement('button');
         option.className = 'work-type-option';
         if (isSelected) option.classList.add('selected');
@@ -548,9 +548,9 @@ function showWorkTypeSelector(cavalierName) {
         option.innerHTML = `${value.icon} ${value.label}`;
         option.onclick = () => {
             if (isSelected) {
-                removeTaskForCavalier(cavalierName, key);
+                removeTaskForRider(riderName, key);
             } else {
-                addTaskForCavalier(cavalierName, key);
+                addTaskForRider(riderName, key);
             }
         };
         
@@ -562,19 +562,19 @@ function showWorkTypeSelector(cavalierName) {
     if (backBtn) {
         backBtn.onclick = () => {
             buttonsDiv.innerHTML = originalContent;
-            loadCavalierButtons();
+            loadRiderButtons();
         };
     }
 }
 
-async function addTaskForCavalier(cavalier, workType) {
+async function addTaskForRider(rider, workType) {
     showLoading();
     try {
         const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                cavalier: cavalier,
+                rider: rider,
                 work_type: workType
             })
         });
@@ -589,9 +589,9 @@ async function addTaskForCavalier(cavalier, workType) {
         if (data.success) {
             allAssignments = data.assignments;
             displayAssignedTasks();
-            showWorkTypeSelector(cavalier); // Rafraîchir le sélecteur
+            showWorkTypeSelector(rider); // Rafraîchir le sélecteur
             renderCalendar();
-            showToast(`✅ ${cavalier} - ${getWorkTypeLabel(workType)} ajouté`);
+            showToast(`✅ ${rider} - ${getWorkTypeLabel(workType)} ajouté`);
         }
     } catch (error) {
         console.error('Erreur:', error);
@@ -601,11 +601,11 @@ async function addTaskForCavalier(cavalier, workType) {
     }
 }
 
-async function removeTaskForCavalier(cavalier, workType) {
+async function removeTaskForRider(rider, workType) {
     showLoading();
     try {
         const tasks = allAssignments[selectedDate]?.tasks || [];
-        const taskIndex = tasks.findIndex(t => t.cavalier === cavalier && t.work_type === workType);
+        const taskIndex = tasks.findIndex(t => t.rider === rider && t.work_type === workType);
         
         if (taskIndex === -1) {
             showToast('❌ Tâche non trouvée');
@@ -623,14 +623,14 @@ async function removeTaskForCavalier(cavalier, workType) {
             allAssignments = data.assignments;
             displayAssignedTasks();
             if (Object.keys(allAssignments).includes(selectedDate) && 
-                allAssignments[selectedDate]?.tasks?.some(t => t.cavalier === cavalier)) {
-                showWorkTypeSelector(cavalier); // Rafraîchir le sélecteur
+                allAssignments[selectedDate]?.tasks?.some(t => t.rider === rider)) {
+                showWorkTypeSelector(rider); // Rafraîchir le sélecteur
             } else {
-                // Revenir à la liste des cavaliers si plus de tâches pour ce cavalier
-                loadCavalierButtons();
+                // Revenir à la liste des riders si plus de tâches pour ce rider
+                loadRiderButtons();
             }
             renderCalendar();
-            showToast(`✅ ${cavalier} - ${getWorkTypeLabel(workType)} retiré`);
+            showToast(`✅ ${rider} - ${getWorkTypeLabel(workType)} retiré`);
         }
     } catch (error) {
         console.error('Erreur:', error);
@@ -640,30 +640,30 @@ async function removeTaskForCavalier(cavalier, workType) {
     }
 }
 
-// ===== AJOUTER CAVALIER PERSONNALISÉ =====
-async function addCustomCavalier() {
-    const customCavalierInput = document.getElementById('customCavalierInput');
+// ===== ADD A CUSTOM RIDER =====
+async function addCustomRider() {
+    const customRiderInput = document.getElementById('customRiderInput');
     const customWorkTypeSelect = document.getElementById('customWorkTypeSelect');
-    const customCavalierMessage = document.getElementById('customCavalierMessage');
+    const customRiderMessage = document.getElementById('customRiderMessage');
     
-    if (!customCavalierInput || !customWorkTypeSelect) return;
+    if (!customRiderInput || !customWorkTypeSelect) return;
     
-    const cavalierName = customCavalierInput.value.trim();
+    const riderName = customRiderInput.value.trim();
     const workType = customWorkTypeSelect.value;
     
     // Validation
-    if (!cavalierName) {
-        if (customCavalierMessage) {
-            customCavalierMessage.textContent = 'Veuillez entrer un nom de cavalier';
-            customCavalierMessage.className = 'custom-cavalier-message error';
+    if (!riderName) {
+        if (customRiderMessage) {
+                customRiderMessage.textContent = 'Veuillez entrer un nom de cavalier';
+            customRiderMessage.className = 'custom-rider-message error';
         }
         return;
     }
     
     if (!workType) {
-        if (customCavalierMessage) {
-            customCavalierMessage.textContent = 'Veuillez sélectionner un type de travail';
-            customCavalierMessage.className = 'custom-cavalier-message error';
+        if (customRiderMessage) {
+            customRiderMessage.textContent = 'Veuillez sélectionner un type de travail';
+            customRiderMessage.className = 'custom-rider-message error';
         }
         return;
     }
@@ -672,10 +672,10 @@ async function addCustomCavalier() {
     try {
         // Vérifier que la tâche n'existe pas déjà
         const tasks = allAssignments[selectedDate]?.tasks || [];
-        if (tasks.some(t => t.cavalier === cavalierName && t.work_type === workType)) {
-            if (customCavalierMessage) {
-                customCavalierMessage.textContent = 'Cette tâche existe déjà';
-                customCavalierMessage.className = 'custom-cavalier-message error';
+        if (tasks.some(t => t.rider === riderName && t.work_type === workType)) {
+            if (customRiderMessage) {
+                customRiderMessage.textContent = 'Cette tâche existe déjà';
+                customRiderMessage.className = 'custom-rider-message error';
             }
             hideLoading();
             return;
@@ -685,16 +685,16 @@ async function addCustomCavalier() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                cavalier: cavalierName,
+                rider: riderName,
                 work_type: workType
             })
         });
 
         if (!response.ok) {
             const error = await response.json();
-            if (customCavalierMessage) {
-                customCavalierMessage.textContent = '❌ ' + (error.error || 'Erreur');
-                customCavalierMessage.className = 'custom-cavalier-message error';
+            if (customRiderMessage) {
+                customRiderMessage.textContent = '❌ ' + (error.error || 'Erreur');
+                customRiderMessage.className = 'custom-rider-message error';
             }
             hideLoading();
             return;
@@ -707,31 +707,31 @@ async function addCustomCavalier() {
             renderCalendar();
             
             // Feedback utilisateur
-            if (customCavalierMessage) {
-                customCavalierMessage.textContent = `✅ ${cavalierName} - ${getWorkTypeLabel(workType)} ajouté`;
-                customCavalierMessage.className = 'custom-cavalier-message success';
+            if (customRiderMessage) {
+                customRiderMessage.textContent = `✅ ${riderName} - ${getWorkTypeLabel(workType)} ajouté`;
+                customRiderMessage.className = 'custom-rider-message success';
             }
-            showToast(`✅ ${cavalierName} - ${getWorkTypeLabel(workType)} ajouté`);
+            showToast(`✅ ${riderName} - ${getWorkTypeLabel(workType)} ajouté`);
             
             // Réinitialiser les champs
-            customCavalierInput.value = '';
+            customRiderInput.value = '';
             customWorkTypeSelect.value = '';
             
-            // Garder le focus sur l'input pour ajouter un autre cavalier
+            // Garder le focus sur l'input pour ajouter un autre rider
             setTimeout(() => {
-                customCavalierInput.focus();
+                customRiderInput.focus();
             }, 500);
         } else {
-            if (customCavalierMessage) {
-                customCavalierMessage.textContent = '❌ Erreur lors de la sauvegarde';
-                customCavalierMessage.className = 'custom-cavalier-message error';
+            if (customRiderMessage) {
+                customRiderMessage.textContent = '❌ Erreur lors de la sauvegarde';
+                customRiderMessage.className = 'custom-rider-message error';
             }
         }
     } catch (error) {
         console.error('Erreur:', error);
-        if (customCavalierMessage) {
-            customCavalierMessage.textContent = '❌ Erreur de connexion';
-            customCavalierMessage.className = 'custom-cavalier-message error';
+        if (customRiderMessage) {
+            customRiderMessage.textContent = '❌ Erreur de connexion';
+            customRiderMessage.className = 'custom-rider-message error';
         }
     } finally {
         hideLoading();
@@ -739,7 +739,7 @@ async function addCustomCavalier() {
 }
 
 // ===== AJOUTER TÂCHE (ancienne interface) =====
-async function addCavalierToDay(cavalier) {
+async function addRiderToDay(rider) {
     showLoading();
     try {
         let tasks = [];
@@ -747,7 +747,7 @@ async function addCavalierToDay(cavalier) {
             tasks = allAssignments[selectedDate].tasks.slice();
         }
 
-        if (tasks.find(t => t.cavalier === cavalier)) {
+        if (tasks.find(t => t.rider === rider)) {
             showToast('⚠️ Ce cavalier est déjà assigné');
             return;
         }
@@ -768,7 +768,7 @@ async function addCavalierToDay(cavalier) {
         if (data.success) {
             allAssignments = data.assignments;
             displayAssignedTasks();
-            loadCavalierButtons();
+            loadRiderButtons();
             renderCalendar();
             showToast('✅ Cavalier ajouté');
         } else {
@@ -808,7 +808,7 @@ async function removeTask(date, index) {
             allAssignments = data.assignments;
             if (selectedDate === date) {
                 displayAssignedTasks();
-                loadCavalierButtons();
+                loadRiderButtons();
             }
             renderCalendar();
             showToast('✅ Tâche retirée');
@@ -896,4 +896,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
     await loadData();
 });
-

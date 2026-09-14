@@ -57,7 +57,7 @@ async function loadStats() {
         const response = await fetch(url);
         const data = await response.json();
 
-        displayCavalierStats(data.cavalier_stats, data.cavaliers_data);
+        displayRiderStats(data.rider_stats, data.riders_data);
         displayWorkTypeStats(data.work_types);
     } catch (error) {
         console.error('Erreur:', error);
@@ -65,8 +65,8 @@ async function loadStats() {
     }
 }
 
-function displayCavalierStats(stats, cavaliersData) {
-    const container = document.getElementById('cavalierStats');
+function displayRiderStats(stats, ridersData) {
+    const container = document.getElementById('riderStats');
     container.innerHTML = '';
 
     if (Object.keys(stats).length === 0) {
@@ -77,22 +77,22 @@ function displayCavalierStats(stats, cavaliersData) {
     // Trier par nombre de séances décroissant
     const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]);
 
-    sorted.forEach(([cavalier, count]) => {
+    sorted.forEach(([rider, count]) => {
         const item = document.createElement('div');
         item.className = 'stat-item';
 
         const left = document.createElement('div');
         left.className = 'stat-item-left';
 
-        const cavalierData = cavaliersData.find(c => c.name === cavalier);
-        const color = cavalierData ? cavalierData.color : '#667eea';
+        const riderData = ridersData.find(c => c.name === rider);
+        const color = riderData ? riderData.color : '#667eea';
 
         const colorDiv = document.createElement('div');
         colorDiv.className = 'stat-color';
         colorDiv.style.backgroundColor = color;
 
         const name = document.createElement('span');
-        name.textContent = cavalier;
+        name.textContent = rider;
         name.style.fontSize = '16px';
         name.style.fontWeight = 'bold';
 
