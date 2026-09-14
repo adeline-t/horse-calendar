@@ -94,6 +94,31 @@
                 </div>
             </section>
 
+            <!-- Ajouter un cavalier personnalisé -->
+            <section class="custom-cavalier-section">
+                <h4>
+                    <span class="section-icon">✏️</span>
+                    Ou entrer un cavalier personnalisé
+                </h4>
+                <div class="custom-cavalier-input-group">
+                    <input 
+                        type="text" 
+                        id="customCavalierInput" 
+                        class="custom-cavalier-input" 
+                        placeholder="Nom du cavalier..."
+                        maxlength="50"
+                        aria-label="Nom du cavalier"
+                    />
+                    <select id="customWorkTypeSelect" class="custom-work-type-select" aria-label="Type de travail">
+                        <option value="">-- Sélectionner le type --</option>
+                    </select>
+                    <button id="addCustomCavalierBtn" class="btn btn-primary" style="flex-shrink: 0;">
+                        Ajouter
+                    </button>
+                </div>
+                <div id="customCavalierMessage" class="custom-cavalier-message"></div>
+            </section>
+
             <!-- Commentaire -->
             <section class="comment-section">
                 <h4>

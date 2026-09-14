@@ -4,6 +4,7 @@ let selectedDate = null;
 let allAssignments = {};
 let allCavaliers = [];
 let colorByName = new Map();
+let selectedCavalierForWorkType = null; // Pour tracker le cavalier en cours de sélection
 
 // ===== INITIALISATION =====
 function initializeWorkTypeSelect() {
@@ -18,12 +19,6 @@ function initializeWorkTypeSelect() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    initializeApp();
-    initializeWorkTypeSelect();
-    setupEventListeners();
-    loadData();
-});
 
 function initializeApp() {
     if ('ontouchstart' in window) {
@@ -75,7 +70,23 @@ function setupEventListeners() {
 
     const workTypeSelect = document.getElementById('workTypeSelect');
     if (workTypeSelect) {
-        workTypeSelect.addEventListener('change', saveWorkType);
+        workTypeSelect.addEventListener('change', () => {});  // Désactivé, on va utiliser un nouveau système
+    }
+
+    // Custom cavalier button
+    const addCustomCavalierBtn = document.getElementById('addCustomCavalierBtn');
+    if (addCustomCavalierBtn) {
+        addCustomCavalierBtn.addEventListener('click', addCustomCavalier);
+    }
+
+    // Allow Enter key in custom cavalier input
+    const customCavalierInput = document.getElementById('customCavalierInput');
+    if (customCavalierInput) {
+        customCavalierInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addCustomCavalier();
+            }
+        });
     }
 
     window.addEventListener('resize', debounce(() => {
@@ -232,33 +243,27 @@ function createDayElement(day, isOtherMonth, year, month, container) {
     const assignments = allAssignments[dateKey];
 
     if (assignments) {
-        // Type de travail
-        if (assignments.work_type) {
-            const workBadge = document.createElement('div');
-            workBadge.className = 'work-type-badge';
-            workBadge.textContent = getWorkTypeIcon(assignments.work_type) + ' ' + getWorkTypeLabel(assignments.work_type);
-            dayDiv.appendChild(workBadge);
-        }
-
-        // Cavaliers
-        if (assignments.cavaliers && assignments.cavaliers.length > 0) {
-            assignments.cavaliers.forEach((cavalier, index) => {
+        // Afficher les tâches (cavalier + work_type)
+        const tasks = assignments.tasks || [];
+        
+        if (tasks.length > 0) {
+            tasks.forEach((task, index) => {
                 const badge = document.createElement('div');
-                badge.className = 'cavalier-badge';
-                badge.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
+                badge.className = 'task-badge';
+                badge.style.borderLeft = '4px solid ' + getCavalierColor(task.cavalier);
 
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = cavalier;
-                nameSpan.title = cavalier;
-                badge.appendChild(nameSpan);
+                const taskText = document.createElement('span');
+                taskText.textContent = `${task.cavalier} ${getWorkTypeIcon(task.work_type)}`;
+                taskText.title = `${task.cavalier} - ${getWorkTypeLabel(task.work_type)}`;
+                badge.appendChild(taskText);
 
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-btn';
-                removeBtn.setAttribute('aria-label', `Retirer ${cavalier}`);
+                removeBtn.setAttribute('aria-label', `Retirer ${task.cavalier} - ${getWorkTypeLabel(task.work_type)}`);
                 removeBtn.textContent = '×';
                 removeBtn.onclick = function(event) {
                     event.stopPropagation();
-                    removeCavalierFromDay(dateKey, index);
+                    removeTask(dateKey, index);
                 };
                 badge.appendChild(removeBtn);
 
@@ -325,23 +330,15 @@ function renderMobileList() {
         const detailsCol = document.createElement('div');
         detailsCol.className = 'list-details';
 
-        if (assignments && (assignments.cavaliers?.length > 0 || assignments.work_type || assignments.comment)) {
-            // Type de travail
-            if (assignments.work_type) {
-                const workDiv = document.createElement('div');
-                workDiv.className = 'list-work-type';
-                workDiv.textContent = getWorkTypeIcon(assignments.work_type) + ' ' + getWorkTypeLabel(assignments.work_type);
-                detailsCol.appendChild(workDiv);
-            }
-
-            // Cavaliers
-            if (assignments.cavaliers && assignments.cavaliers.length > 0) {
-                assignments.cavaliers.forEach(cavalier => {
-                    const cavalierDiv = document.createElement('div');
-                    cavalierDiv.className = 'list-cavalier';
-                    cavalierDiv.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
-                    cavalierDiv.textContent = cavalier;
-                    detailsCol.appendChild(cavalierDiv);
+        if (assignments && (assignments.tasks?.length > 0 || assignments.comment)) {
+            // Tâches (cavalier + work_type)
+            if (assignments.tasks && assignments.tasks.length > 0) {
+                assignments.tasks.forEach(task => {
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'list-task';
+                    taskDiv.style.borderLeft = '4px solid ' + getCavalierColor(task.cavalier);
+                    taskDiv.innerHTML = `<strong>${task.cavalier}</strong> ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
+                    detailsCol.appendChild(taskDiv);
                 });
             }
 
@@ -377,9 +374,10 @@ async function openModal(day, month, year) {
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     modalDate.textContent = date.toLocaleDateString('fr-FR', options);
 
-    const workTypeSelect = document.getElementById('workTypeSelect');
-    if (workTypeSelect) {
-        workTypeSelect.value = allAssignments[selectedDate]?.work_type || '';
+    // Masquer la section "Type de travail" depuis qu'on gère les types par cavalier
+    const workTypeSection = document.querySelector('.work-type-section');
+    if (workTypeSection) {
+        workTypeSection.style.display = 'none';
     }
 
     const commentText = document.getElementById('commentText');
@@ -390,7 +388,18 @@ async function openModal(day, month, year) {
         if (charCount) charCount.textContent = comment.length;
     }
 
-    displayAssignedCavaliers();
+    // Initialiser le sélecteur de type de travail personnalisé
+    initializeCustomWorkTypeSelect();
+    
+    // Réinitialiser les champs personnalisés
+    const customCavalierInput = document.getElementById('customCavalierInput');
+    const customWorkTypeSelect = document.getElementById('customWorkTypeSelect');
+    const customCavalierMessage = document.getElementById('customCavalierMessage');
+    if (customCavalierInput) customCavalierInput.value = '';
+    if (customWorkTypeSelect) customWorkTypeSelect.value = '';
+    if (customCavalierMessage) customCavalierMessage.textContent = '';
+
+    displayAssignedTasks();
     await loadCavalierButtons();
 
     modal.style.display = 'block';
@@ -398,6 +407,22 @@ async function openModal(day, month, year) {
 
     const modalContent = modal.querySelector('.modal-content');
     if (modalContent) modalContent.scrollTop = 0;
+}
+
+function initializeCustomWorkTypeSelect() {
+    const select = document.getElementById('customWorkTypeSelect');
+    if (!select) return;
+    
+    // Garder la première option vide
+    select.innerHTML = '<option value="">-- Sélectionner le type --</option>';
+    
+    // Ajouter chaque type de travail
+    Object.entries(WORK_TYPES).forEach(([key, value]) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = `${value.icon} ${value.label}`;
+        select.appendChild(option);
+    });
 }
 
 function closeModal() {
@@ -421,23 +446,27 @@ async function loadCavalierButtons() {
             return;
         }
 
-        const assignedCavaliers = allAssignments[selectedDate]?.cavaliers || [];
-
+        const tasks = allAssignments[selectedDate]?.tasks || [];
+        
         cavaliers.forEach(cavalier => {
-            const isAssigned = assignedCavaliers.includes(cavalier.name);
+            // Vérifier si ce cavalier a déjà toutes les tâches possibles
+            const cavalierTasks = tasks.filter(t => t.cavalier === cavalier.name);
+            const allWorkTypesAssigned = cavalierTasks.length > 0;
 
             const button = document.createElement('button');
             button.className = 'cavalier-btn';
-            if (isAssigned) button.classList.add('assigned');
+            if (allWorkTypesAssigned && cavalierTasks.length >= Object.keys(WORK_TYPES).length) {
+                button.classList.add('assigned');
+            }
 
             button.style.borderLeft = '4px solid ' + (cavalier.color || '#667eea');
             button.textContent = cavalier.name;
-            button.disabled = isAssigned;
-            button.setAttribute('aria-pressed', isAssigned ? 'true' : 'false');
-
-            if (!isAssigned) {
-                button.addEventListener('click', () => addCavalierToDay(cavalier.name));
+            if (allWorkTypesAssigned && cavalierTasks.length >= Object.keys(WORK_TYPES).length) {
+                button.disabled = true;
             }
+            button.setAttribute('aria-pressed', allWorkTypesAssigned ? 'true' : 'false');
+
+            button.addEventListener('click', () => showWorkTypeSelector(cavalier.name));
 
             buttonsDiv.appendChild(button);
         });
@@ -447,40 +476,41 @@ async function loadCavalierButtons() {
     }
 }
 
-// ===== ASSIGNED CAVALIERS =====
-function displayAssignedCavaliers() {
+// ===== ASSIGNED TASKS =====
+function displayAssignedTasks() {
     const container = document.getElementById('assignedCavaliers');
     const assignments = allAssignments[selectedDate];
 
     container.innerHTML = '';
 
-    if (!assignments || !assignments.cavaliers || assignments.cavaliers.length === 0) {
-        container.innerHTML = '<p class="empty-message">Aucun cavalier assigné</p>';
+    if (!assignments || !assignments.tasks || assignments.tasks.length === 0) {
+        container.innerHTML = '<p class="empty-message">Aucune tâche assignée</p>';
         updateAssignedCount(0);
         return;
     }
 
-    assignments.cavaliers.forEach((cavalier, index) => {
+    assignments.tasks.forEach((task, index) => {
         const item = document.createElement('div');
-        item.className = 'assigned-cavalier-item';
-        item.style.borderLeft = '4px solid ' + getCavalierColor(cavalier);
+        item.className = 'assigned-task-item';
+        item.style.borderLeft = '4px solid ' + getCavalierColor(task.cavalier);
 
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = cavalier;
-        item.appendChild(nameSpan);
+        const taskInfo = document.createElement('div');
+        taskInfo.className = 'task-info';
+        taskInfo.innerHTML = `<strong>${task.cavalier}</strong> - ${getWorkTypeIcon(task.work_type)} ${getWorkTypeLabel(task.work_type)}`;
+        item.appendChild(taskInfo);
 
         const removeIcon = document.createElement('span');
         removeIcon.className = 'remove-icon';
         removeIcon.setAttribute('role', 'button');
-        removeIcon.setAttribute('aria-label', `Retirer ${cavalier}`);
+        removeIcon.setAttribute('aria-label', `Retirer ${task.cavalier} - ${getWorkTypeLabel(task.work_type)}`);
         removeIcon.textContent = '×';
-        removeIcon.onclick = () => removeCavalierFromDay(selectedDate, index);
+        removeIcon.onclick = () => removeTask(selectedDate, index);
         item.appendChild(removeIcon);
 
         container.appendChild(item);
     });
 
-    updateAssignedCount(assignments.cavaliers.length);
+    updateAssignedCount(assignments.tasks.length);
 }
 
 function updateAssignedCount(count) {
@@ -488,30 +518,247 @@ function updateAssignedCount(count) {
     if (countBadge) countBadge.textContent = count || 0;
 }
 
-// ===== AJOUTER CAVALIER =====
+// ===== WORK TYPE SELECTOR =====
+function showWorkTypeSelector(cavalierName) {
+    selectedCavalierForWorkType = cavalierName;
+    
+    const tasks = allAssignments[selectedDate]?.tasks || [];
+    const cavalierWorkTypes = new Set(
+        tasks.filter(t => t.cavalier === cavalierName).map(t => t.work_type)
+    );
+    
+    const buttonsDiv = document.getElementById('cavalierButtons');
+    const originalContent = buttonsDiv.innerHTML;
+    
+    buttonsDiv.innerHTML = `<div class="work-type-selector">
+        <div class="work-type-selector-header">
+            <button class="back-btn" aria-label="Retour">&larr;</button>
+            <span class="selector-title">Type de travail pour ${cavalierName}</span>
+        </div>
+        <div class="work-type-options" id="workTypeOptions"></div>
+    </div>`;
+    
+    const workTypeOptions = document.getElementById('workTypeOptions');
+    Object.entries(WORK_TYPES).forEach(([key, value]) => {
+        const isSelected = cavalierWorkTypes.has(key);
+        const option = document.createElement('button');
+        option.className = 'work-type-option';
+        if (isSelected) option.classList.add('selected');
+        
+        option.innerHTML = `${value.icon} ${value.label}`;
+        option.onclick = () => {
+            if (isSelected) {
+                removeTaskForCavalier(cavalierName, key);
+            } else {
+                addTaskForCavalier(cavalierName, key);
+            }
+        };
+        
+        workTypeOptions.appendChild(option);
+    });
+    
+    // Bouton retour
+    const backBtn = document.querySelector('.back-btn');
+    if (backBtn) {
+        backBtn.onclick = () => {
+            buttonsDiv.innerHTML = originalContent;
+            loadCavalierButtons();
+        };
+    }
+}
+
+async function addTaskForCavalier(cavalier, workType) {
+    showLoading();
+    try {
+        const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                cavalier: cavalier,
+                work_type: workType
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            showToast('❌ ' + (error.error || 'Erreur'));
+            return;
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            allAssignments = data.assignments;
+            displayAssignedTasks();
+            showWorkTypeSelector(cavalier); // Rafraîchir le sélecteur
+            renderCalendar();
+            showToast(`✅ ${cavalier} - ${getWorkTypeLabel(workType)} ajouté`);
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast('❌ Erreur de connexion');
+    } finally {
+        hideLoading();
+    }
+}
+
+async function removeTaskForCavalier(cavalier, workType) {
+    showLoading();
+    try {
+        const tasks = allAssignments[selectedDate]?.tasks || [];
+        const taskIndex = tasks.findIndex(t => t.cavalier === cavalier && t.work_type === workType);
+        
+        if (taskIndex === -1) {
+            showToast('❌ Tâche non trouvée');
+            return;
+        }
+        
+        const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks/${taskIndex}`, {
+            method: 'DELETE'
+        });
+
+        if (!response.ok) throw new Error('Erreur réseau');
+        const data = await response.json();
+
+        if (data.success) {
+            allAssignments = data.assignments;
+            displayAssignedTasks();
+            if (Object.keys(allAssignments).includes(selectedDate) && 
+                allAssignments[selectedDate]?.tasks?.some(t => t.cavalier === cavalier)) {
+                showWorkTypeSelector(cavalier); // Rafraîchir le sélecteur
+            } else {
+                // Revenir à la liste des cavaliers si plus de tâches pour ce cavalier
+                loadCavalierButtons();
+            }
+            renderCalendar();
+            showToast(`✅ ${cavalier} - ${getWorkTypeLabel(workType)} retiré`);
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        showToast('❌ Erreur de connexion');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ===== AJOUTER CAVALIER PERSONNALISÉ =====
+async function addCustomCavalier() {
+    const customCavalierInput = document.getElementById('customCavalierInput');
+    const customWorkTypeSelect = document.getElementById('customWorkTypeSelect');
+    const customCavalierMessage = document.getElementById('customCavalierMessage');
+    
+    if (!customCavalierInput || !customWorkTypeSelect) return;
+    
+    const cavalierName = customCavalierInput.value.trim();
+    const workType = customWorkTypeSelect.value;
+    
+    // Validation
+    if (!cavalierName) {
+        if (customCavalierMessage) {
+            customCavalierMessage.textContent = 'Veuillez entrer un nom de cavalier';
+            customCavalierMessage.className = 'custom-cavalier-message error';
+        }
+        return;
+    }
+    
+    if (!workType) {
+        if (customCavalierMessage) {
+            customCavalierMessage.textContent = 'Veuillez sélectionner un type de travail';
+            customCavalierMessage.className = 'custom-cavalier-message error';
+        }
+        return;
+    }
+    
+    showLoading();
+    try {
+        // Vérifier que la tâche n'existe pas déjà
+        const tasks = allAssignments[selectedDate]?.tasks || [];
+        if (tasks.some(t => t.cavalier === cavalierName && t.work_type === workType)) {
+            if (customCavalierMessage) {
+                customCavalierMessage.textContent = 'Cette tâche existe déjà';
+                customCavalierMessage.className = 'custom-cavalier-message error';
+            }
+            hideLoading();
+            return;
+        }
+        
+        const response = await fetch(`${API_URL}/assignments/${selectedDate}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                cavalier: cavalierName,
+                work_type: workType
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            if (customCavalierMessage) {
+                customCavalierMessage.textContent = '❌ ' + (error.error || 'Erreur');
+                customCavalierMessage.className = 'custom-cavalier-message error';
+            }
+            hideLoading();
+            return;
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            allAssignments = data.assignments;
+            displayAssignedTasks();
+            renderCalendar();
+            
+            // Feedback utilisateur
+            if (customCavalierMessage) {
+                customCavalierMessage.textContent = `✅ ${cavalierName} - ${getWorkTypeLabel(workType)} ajouté`;
+                customCavalierMessage.className = 'custom-cavalier-message success';
+            }
+            showToast(`✅ ${cavalierName} - ${getWorkTypeLabel(workType)} ajouté`);
+            
+            // Réinitialiser les champs
+            customCavalierInput.value = '';
+            customWorkTypeSelect.value = '';
+            
+            // Garder le focus sur l'input pour ajouter un autre cavalier
+            setTimeout(() => {
+                customCavalierInput.focus();
+            }, 500);
+        } else {
+            if (customCavalierMessage) {
+                customCavalierMessage.textContent = '❌ Erreur lors de la sauvegarde';
+                customCavalierMessage.className = 'custom-cavalier-message error';
+            }
+        }
+    } catch (error) {
+        console.error('Erreur:', error);
+        if (customCavalierMessage) {
+            customCavalierMessage.textContent = '❌ Erreur de connexion';
+            customCavalierMessage.className = 'custom-cavalier-message error';
+        }
+    } finally {
+        hideLoading();
+    }
+}
+
+// ===== AJOUTER TÂCHE (ancienne interface) =====
 async function addCavalierToDay(cavalier) {
     showLoading();
     try {
-        let cavaliers = [];
-        if (allAssignments[selectedDate] && allAssignments[selectedDate].cavaliers) {
-            cavaliers = allAssignments[selectedDate].cavaliers.slice();
+        let tasks = [];
+        if (allAssignments[selectedDate] && allAssignments[selectedDate].tasks) {
+            tasks = allAssignments[selectedDate].tasks.slice();
         }
 
-        if (cavaliers.includes(cavalier)) {
+        if (tasks.find(t => t.cavalier === cavalier)) {
             showToast('⚠️ Ce cavalier est déjà assigné');
             return;
         }
-
-        cavaliers.push(cavalier);
 
         const response = await fetch(API_URL + '/assignments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: selectedDate,
-                cavaliers: cavaliers,
-                comment: allAssignments[selectedDate]?.comment || '',
-                work_type: allAssignments[selectedDate]?.work_type || ''
+                tasks: tasks,
+                comment: allAssignments[selectedDate]?.comment || ''
             })
         });
 
@@ -520,7 +767,7 @@ async function addCavalierToDay(cavalier) {
 
         if (data.success) {
             allAssignments = data.assignments;
-            displayAssignedCavaliers();
+            displayAssignedTasks();
             loadCavalierButtons();
             renderCalendar();
             showToast('✅ Cavalier ajouté');
@@ -535,32 +782,23 @@ async function addCavalierToDay(cavalier) {
     }
 }
 
-// ===== SUPPRIMER CAVALIER =====
-async function removeCavalierFromDay(date, index) {
+// ===== SUPPRIMER TÂCHE (nouvelle interface) =====
+async function removeTask(date, index) {
     showLoading();
     try {
-        if (!allAssignments[date] || !Array.isArray(allAssignments[date].cavaliers)) {
-            showToast('⚠️ Aucune assignation pour cette date');
+        if (!allAssignments[date] || !Array.isArray(allAssignments[date].tasks)) {
+            showToast('⚠️ Aucune tâche pour cette date');
             return;
         }
 
-        const cavaliers = allAssignments[date].cavaliers.slice();
-        if (index < 0 || index >= cavaliers.length) {
+        const tasks = allAssignments[date].tasks;
+        if (index < 0 || index >= tasks.length) {
             showToast('⚠️ Index invalide');
             return;
         }
 
-        cavaliers.splice(index, 1);
-
-        const response = await fetch(API_URL + '/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                date: date,
-                cavaliers: cavaliers,
-                comment: allAssignments[date]?.comment || '',
-                work_type: allAssignments[date]?.work_type || ''
-            })
+        const response = await fetch(`${API_URL}/assignments/${date}/tasks/${index}`, {
+            method: 'DELETE'
         });
 
         if (!response.ok) throw new Error('Erreur réseau');
@@ -569,11 +807,11 @@ async function removeCavalierFromDay(date, index) {
         if (data.success) {
             allAssignments = data.assignments;
             if (selectedDate === date) {
-                displayAssignedCavaliers();
+                displayAssignedTasks();
                 loadCavalierButtons();
             }
             renderCalendar();
-            showToast('✅ Cavalier retiré');
+            showToast('✅ Tâche retirée');
         }
     } catch (error) {
         console.error('Erreur:', error);
@@ -589,17 +827,15 @@ async function saveComment() {
     try {
         const comment = document.getElementById('commentText').value.trim();
 
-        const cavaliers = allAssignments[selectedDate]?.cavaliers || [];
-        const work_type = allAssignments[selectedDate]?.work_type || '';
+        const tasks = allAssignments[selectedDate]?.tasks || [];
 
         const response = await fetch(API_URL + '/assignments', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: selectedDate,
-                cavaliers: cavaliers,
-                comment: comment,
-                work_type: work_type
+                tasks: tasks,
+                comment: comment
             })
         });
 
@@ -610,44 +846,6 @@ async function saveComment() {
             allAssignments = data.assignments;
             renderCalendar();
             showToast('💾 Commentaire enregistré');
-        } else {
-            showToast('❌ Erreur lors de la sauvegarde');
-        }
-    } catch (error) {
-        console.error('Erreur:', error);
-        showToast('❌ Erreur de connexion');
-    } finally {
-        hideLoading();
-    }
-}
-
-// ===== TYPE DE TRAVAIL =====
-async function saveWorkType() {
-    showLoading();
-    try {
-        const workType = document.getElementById('workTypeSelect').value;
-
-        const cavaliers = allAssignments[selectedDate]?.cavaliers || [];
-        const comment = allAssignments[selectedDate]?.comment || '';
-
-        const response = await fetch(API_URL + '/assignments', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                date: selectedDate,
-                cavaliers: cavaliers,
-                comment: comment,
-                work_type: workType
-            })
-        });
-
-        if (!response.ok) throw new Error('Erreur réseau');
-        const data = await response.json();
-
-        if (data.success) {
-            allAssignments = data.assignments;
-            renderCalendar();
-            showToast('✅ Type de travail enregistré');
         } else {
             showToast('❌ Erreur lors de la sauvegarde');
         }
@@ -690,3 +888,12 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
+// ===== DÉMARRAGE DE L’APPLICATION =====
+document.addEventListener('DOMContentLoaded', async () => {
+    initializeApp();
+    initializeWorkTypeSelect();
+    setupEventListeners();
+    await loadData();
+});
+

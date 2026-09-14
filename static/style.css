@@ -445,6 +445,67 @@ section h4 {
     padding: 20px;
 }
 
+/* Custom cavalier */
+.custom-cavalier-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f0f7ff;
+    border-radius: 5px;
+    border-left: 4px solid #667eea;
+}
+.custom-cavalier-section h4 {
+    margin-bottom: 12px;
+    color: #333;
+}
+.custom-cavalier-input-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.custom-cavalier-input {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: inherit;
+}
+.custom-cavalier-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+.custom-work-type-select {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+}
+.custom-work-type-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+#addCustomCavalierBtn {
+    padding: 10px 20px;
+    font-size: 14px;
+}
+.custom-cavalier-message {
+    margin-top: 8px;
+    font-size: 13px;
+    min-height: 18px;
+}
+.custom-cavalier-message.success {
+    color: #28a745;
+}
+.custom-cavalier-message.error {
+    color: #dc3545;
+}
+
 /* Commentaire */
 .comment-textarea {
     width: 100%;
@@ -536,6 +597,149 @@ section h4 {
 }
 .touch-device .cavalier-btn:active {
     transform: scale(0.97);
+}
+
+/* ===== NEW TASK UI ===== */
+/* Task badge dans le calendrier */
+.task-badge {
+    background: #667eea;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    margin-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid #667eea;
+}
+.task-badge span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.task-badge .remove-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    margin-left: 8px;
+    font-weight: bold;
+    line-height: 1;
+    transition: all 0.3s;
+}
+.task-badge .remove-btn:hover {
+    color: #ff6b6b;
+    transform: scale(1.2);
+}
+
+/* Tâche assignée dans la modal */
+.assigned-task-item {
+    background: white;
+    border-left: 4px solid #667eea;
+    color: #333;
+    padding: 10px 12px;
+    border-radius: 5px;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.assigned-task-item .task-info {
+    flex: 1;
+    font-size: 14px;
+}
+.assigned-task-item .task-info strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+.assigned-task-item .remove-icon {
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 0 5px;
+    transition: all 0.3s;
+    margin-left: 10px;
+}
+.assigned-task-item .remove-icon:hover {
+    color: #ff6b6b;
+    transform: scale(1.2);
+}
+
+/* Sélecteur de type de travail */
+.work-type-selector {
+    display: flex;
+    flex-direction: column;
+}
+.work-type-selector-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+.work-type-selector-header .back-btn {
+    background: #f0f0f0;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s;
+}
+.work-type-selector-header .back-btn:hover {
+    background: #667eea;
+    color: white;
+}
+.work-type-selector-header .selector-title {
+    flex: 1;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.work-type-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+.work-type-option {
+    background: #f0f0f0;
+    border: 2px solid #ddd;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 13px;
+    text-align: center;
+    color: #333;
+}
+.work-type-option:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+.work-type-option.selected {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Tâche dans la liste mobile */
+.list-task {
+    background: #667eea;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    border-left: 4px solid #667eea;
 }
 
 /* ===== MEDIA QUERIES MOBILE ===== */
@@ -630,6 +834,25 @@ section h4 {
         align-items: center;
         justify-content: center;
     }
+    .assigned-task-item {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    .assigned-task-item .remove-icon {
+        font-size: 20px;
+        padding: 0 8px;
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .work-type-selector-header .selector-title {
+        font-size: 15px;
+    }
+    .work-type-options {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
     .cavalier-buttons {
         max-height: 200px;
         gap: 8px;
@@ -639,6 +862,17 @@ section h4 {
         font-size: 15px;
         border-left-width: 3px;
         min-height: 48px;
+    }
+    .custom-cavalier-input-group {
+        flex-direction: column;
+    }
+    .custom-cavalier-input,
+    .custom-work-type-select {
+        width: 100%;
+        min-width: unset;
+    }
+    #addCustomCavalierBtn {
+        width: 100%;
     }
     .comment-actions {
         flex-direction: column;
