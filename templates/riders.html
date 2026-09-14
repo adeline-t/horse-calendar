@@ -6,52 +6,85 @@
     <title>Gestion des Cavaliers</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <nav>
-        <h1>🐴 Gestion des Cavaliers</h1>
-        <a href="/" class="btn">Retour au planning</a>
+<body class="rider-management-page">
+    <nav class="rider-page-nav">
+        <div>
+            <p class="page-eyebrow">Écurie</p>
+            <h1>Gestion des Cavaliers</h1>
+        </div>
+        <a href="/" class="btn btn-secondary">← Retour au planning</a>
     </nav>
 
-    <div class="container">
-        <div class="rider-form">
-            <h2>Ajouter un cavalier</h2>
-            <div class="form-row">
-                <input type="text" id="riderName" placeholder="Nom du cavalier">
-                <input type="color" id="riderColor" value="#667eea" title="Choisir une couleur">
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Date de début (optionnel)</label>
-                    <input type="date" id="riderStartDate">
-                </div>
-                <div class="form-group">
-                    <label>Date de fin (optionnel)</label>
-                    <input type="date" id="riderEndDate">
+    <main class="container rider-management-layout">
+        <section class="rider-form-card" aria-labelledby="addRiderTitle">
+            <div class="rider-section-heading">
+                <span class="heading-icon" aria-hidden="true">＋</span>
+                <div>
+                    <p class="section-kicker">Nouveau profil</p>
+                    <h2 id="addRiderTitle">Ajouter un cavalier</h2>
+                    <p>Créez son profil et définissez sa période d'activité.</p>
                 </div>
             </div>
-            <button id="addRiderBtn" class="btn">Ajouter</button>
-        </div>
 
-        <div class="rider-list">
-            <h2>Liste des cavaliers</h2>
-            <ul id="ridersList"></ul>
-        </div>
-    </div>
+            <form id="addRiderForm" class="rider-form" novalidate>
+                <label class="rider-form-field rider-name-field">
+                    <span>Nom du cavalier</span>
+                    <input type="text" id="riderName" placeholder="Ex. Camille" maxlength="80" autocomplete="off" required>
+                </label>
 
-    <!-- Modal pour éditer les dates -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <span class="close-edit">×</span>
-            <h3>Modifier <span id="editRiderName"></span></h3>
+                <label class="rider-form-field color-field">
+                    <span>Couleur du planning</span>
+                    <span class="color-control">
+                        <input type="color" id="riderColor" value="#667eea" title="Choisir une couleur">
+                        <span id="riderColorValue">#667eea</span>
+                    </span>
+                </label>
+
+                <div class="availability-fields">
+                    <label class="rider-form-field">
+                        <span>Date de début <small>optionnel</small></span>
+                        <input type="date" id="riderStartDate">
+                    </label>
+                    <span class="date-separator" aria-hidden="true">→</span>
+                    <label class="rider-form-field">
+                        <span>Date de fin <small>optionnel</small></span>
+                        <input type="date" id="riderEndDate">
+                    </label>
+                </div>
+
+                <p class="form-hint">Sans dates, le cavalier restera toujours disponible dans le planning.</p>
+                <div id="riderFormMessage" class="rider-form-message" role="status" aria-live="polite"></div>
+                <button id="addRiderBtn" type="submit" class="btn btn-primary rider-submit">Ajouter le cavalier</button>
+            </form>
+        </section>
+
+        <section class="rider-directory" aria-labelledby="riderDirectoryTitle">
+            <div class="directory-heading">
+                <div>
+                    <p class="section-kicker">Équipe</p>
+                    <h2 id="riderDirectoryTitle">Cavaliers</h2>
+                </div>
+                <span id="riderCount" class="directory-count">0</span>
+            </div>
+            <ul id="ridersList" class="rider-card-list" aria-live="polite"></ul>
+        </section>
+    </main>
+
+    <!-- Availability editing modal -->
+    <div id="editModal" class="modal" aria-hidden="true">
+        <div class="modal-content rider-edit-modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+            <button type="button" class="close-edit" aria-label="Fermer">×</button>
+            <p class="section-kicker">Disponibilité</p>
+            <h3 id="editModalTitle">Modifier <span id="editRiderName"></span></h3>
 
             <div class="form-group">
-                <label>Date de début</label>
+                <label for="editStartDate">Date de début</label>
                 <input type="date" id="editStartDate">
                 <button class="btn-clear" onclick="document.getElementById('editStartDate').value = ''">Effacer</button>
             </div>
 
             <div class="form-group">
-                <label>Date de fin</label>
+                <label for="editEndDate">Date de fin</label>
                 <input type="date" id="editEndDate">
                 <button class="btn-clear" onclick="document.getElementById('editEndDate').value = ''">Effacer</button>
             </div>

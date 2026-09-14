@@ -4,12 +4,14 @@ let editingIndex = null;
 document.addEventListener('DOMContentLoaded', function() {
     loadRiders();
 
-    document.getElementById('addRiderBtn').addEventListener('click', addRider);
+    document.getElementById('addRiderForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        addRider();
+    });
 
-    document.getElementById('riderName').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            addRider();
-        }
+    const colorInput = document.getElementById('riderColor');
+    colorInput.addEventListener('input', () => {
+        document.getElementById('riderColorValue').textContent = colorInput.value;
     });
 
     // Modal édition
@@ -20,10 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     closeEditBtn.addEventListener('click', () => {
         editModal.style.display = 'none';
+        editModal.setAttribute('aria-hidden', 'true');
     });
 
     cancelEditBtn.addEventListener('click', () => {
         editModal.style.display = 'none';
+        editModal.setAttribute('aria-hidden', 'true');
     });
 
     saveEditBtn.addEventListener('click', saveEdit);
@@ -31,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', (e) => {
         if (e.target === editModal) {
             editModal.style.display = 'none';
+            editModal.setAttribute('aria-hidden', 'true');
         }
     });
 });
@@ -41,10 +46,16 @@ async function loadRiders() {
         const riders = await response.json();
 
         const list = document.getElementById('ridersList');
+        const riderCount = document.getElementById('riderCount');
         list.innerHTML = '';
+        riderCount.textContent = riders.length;
 
         if (riders.length === 0) {
-            list.innerHTML = '<li style="text-align: center; color: #999;">Aucun cavalier pour le moment</li>';
+            list.innerHTML = `<li class="rider-empty-state">
+                <span aria-hidden="true">🐴</span>
+                <strong>Aucun cavalier</strong>
+                <p>Ajoutez votre premier cavalier avec le formulaire.</p>
+            </li>`;
             return;
         }
 
@@ -52,6 +63,8 @@ async function loadRiders() {
 
         riders.forEach((rider, index) => {
             const li = document.createElement('li');
+            li.className = 'rider-card';
+            li.style.setProperty('--rider-color', rider.color || '#667eea');
 
             // Info principale
             const mainInfo = document.createElement('div');
@@ -60,16 +73,20 @@ async function loadRiders() {
             const info = document.createElement('div');
             info.className = 'rider-info';
 
+            const avatar = document.createElement('span');
+            avatar.className = 'rider-avatar';
+            avatar.textContent = rider.name.trim().charAt(0).toUpperCase() || '•';
+
             const colorPicker = document.createElement('input');
             colorPicker.type = 'color';
             colorPicker.className = 'rider-color-indicator';
             colorPicker.value = rider.color || '#667eea';
             colorPicker.title = 'Changer la couleur';
-            colorPicker.addEventListener('change', () => updateRiderColor(index, colorPicker.value));
+            colorPicker.addEventListener('change', () => updateRiderColor(index, colorPicker.value, li));
 
             const name = document.createElement('span');
+            name.className = 'rider-name';
             name.textContent = rider.name;
-            name.style.fontWeight = 'bold';
 
             // Statut
             const status = getRiderStatus(rider, today);
@@ -77,9 +94,14 @@ async function loadRiders() {
             statusBadge.className = 'rider-status status-' + status.class;
             statusBadge.textContent = status.text;
 
+            const identity = document.createElement('div');
+            identity.className = 'rider-identity';
+            identity.appendChild(name);
+            identity.appendChild(statusBadge);
+
+            info.appendChild(avatar);
+            info.appendChild(identity);
             info.appendChild(colorPicker);
-            info.appendChild(name);
-            info.appendChild(statusBadge);
 
             // Actions
             const actions = document.createElement('div');
@@ -87,12 +109,13 @@ async function loadRiders() {
 
             const editBtn = document.createElement('button');
             editBtn.className = 'edit-btn';
-            editBtn.textContent = '📅 Dates';
+            editBtn.textContent = 'Modifier les dates';
             editBtn.addEventListener('click', () => openEditModal(index, rider));
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
-            deleteBtn.textContent = 'Supprimer';
+            deleteBtn.setAttribute('aria-label', `Supprimer ${rider.name}`);
+            deleteBtn.textContent = '×';
             deleteBtn.addEventListener('click', () => deleteRider(index));
 
             actions.appendChild(editBtn);
@@ -109,20 +132,19 @@ async function loadRiders() {
                 if (rider.start_date) {
                     const startItem = document.createElement('div');
                     startItem.className = 'rider-date-item';
-                    startItem.innerHTML = '📅 Début: ' + formatDate(rider.start_date);
+                    startItem.innerHTML = '<span>Début</span><strong>' + formatDate(rider.start_date) + '</strong>';
                     datesDiv.appendChild(startItem);
                 }
 
                 if (rider.end_date) {
                     const endItem = document.createElement('div');
                     endItem.className = 'rider-date-item';
-                    endItem.innerHTML = '🏁 Fin: ' + formatDate(rider.end_date);
+                    endItem.innerHTML = '<span>Fin</span><strong>' + formatDate(rider.end_date) + '</strong>';
                     datesDiv.appendChild(endItem);
                 }
             } else {
                 const noDateItem = document.createElement('div');
-                noDateItem.style.fontStyle = 'italic';
-                noDateItem.style.color = '#999';
+                noDateItem.className = 'rider-date-item rider-always-active';
                 noDateItem.textContent = 'Toujours actif (pas de dates définies)';
                 datesDiv.appendChild(noDateItem);
             }
@@ -168,6 +190,7 @@ function openEditModal(index, rider) {
     document.getElementById('editStartDate').value = rider.start_date || '';
     document.getElementById('editEndDate').value = rider.end_date || '';
     document.getElementById('editModal').style.display = 'block';
+    document.getElementById('editModal').setAttribute('aria-hidden', 'false');
 }
 
 async function saveEdit() {
@@ -196,6 +219,7 @@ async function saveEdit() {
 
         if (data.success) {
             document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editModal').setAttribute('aria-hidden', 'true');
             loadRiders();
         } else {
             alert('Erreur lors de la mise à jour');
@@ -218,13 +242,14 @@ async function addRider() {
     const endDate = endDateInput.value;
 
     if (!name) {
-        alert('Veuillez entrer un nom');
+        showRiderFormMessage('Veuillez entrer un nom.', 'error');
+        nameInput.focus();
         return;
     }
 
     // Validation des dates
     if (startDate && endDate && startDate > endDate) {
-        alert('La date de fin doit être après la date de début');
+        showRiderFormMessage('La date de fin doit être après la date de début.', 'error');
         return;
     }
 
@@ -247,16 +272,25 @@ async function addRider() {
         if (data.success) {
             nameInput.value = '';
             colorInput.value = '#667eea';
+            document.getElementById('riderColorValue').textContent = '#667eea';
             startDateInput.value = '';
             endDateInput.value = '';
-            loadRiders();
+            showRiderFormMessage('Cavalier ajouté avec succès.', 'success');
+            await loadRiders();
+            nameInput.focus();
         } else {
-            alert(data.error || 'Erreur lors de l\'ajout');
+            showRiderFormMessage(data.error || 'Erreur lors de l\'ajout.', 'error');
         }
     } catch (error) {
         console.error('Erreur:', error);
-        alert('Erreur de connexion au serveur');
+        showRiderFormMessage('Erreur de connexion au serveur.', 'error');
     }
+}
+
+function showRiderFormMessage(message, type) {
+    const container = document.getElementById('riderFormMessage');
+    container.textContent = message;
+    container.className = `rider-form-message ${type}`;
 }
 
 async function deleteRider(index) {
@@ -282,7 +316,7 @@ async function deleteRider(index) {
     }
 }
 
-async function updateRiderColor(index, color) {
+async function updateRiderColor(index, color, riderCard) {
     try {
         const response = await fetch(API_URL + '/riders/' + index, {
             method: 'PUT',
@@ -294,7 +328,9 @@ async function updateRiderColor(index, color) {
 
         const data = await response.json();
 
-        if (!data.success) {
+        if (data.success) {
+            riderCard.style.setProperty('--rider-color', color);
+        } else {
             alert('Erreur lors de la mise à jour de la couleur');
             loadRiders();
         }

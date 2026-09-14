@@ -5,6 +5,430 @@
     box-sizing: border-box;
 }
 
+/* ===== RIDER MANAGEMENT ===== */
+body.rider-management-page {
+    background: #f3f5fa;
+    color: #252936;
+}
+
+.rider-page-nav {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    padding: 18px 22px;
+    border: 1px solid #e7e9f1;
+    border-radius: 16px;
+    box-shadow: 0 5px 20px rgba(35, 42, 70, .06);
+}
+
+.rider-page-nav h1 {
+    margin: 2px 0 0;
+    font-size: 1.45rem;
+}
+
+.page-eyebrow,
+.section-kicker {
+    margin: 0;
+    color: #667eea;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.container.rider-management-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, .82fr) minmax(420px, 1.3fr);
+    align-items: start;
+    gap: 24px;
+    padding: 24px;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.rider-form-card,
+.rider-directory {
+    margin: 0;
+    padding: 24px;
+    border: 1px solid #e4e7f0;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 8px 28px rgba(35, 42, 70, .06);
+}
+
+.rider-form-card {
+    position: sticky;
+    top: 20px;
+}
+
+.rider-section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.rider-section-heading h2,
+.directory-heading h2 {
+    margin: 3px 0 0;
+    color: #292e3b;
+    font-size: 1.25rem;
+}
+
+.rider-section-heading p:last-child {
+    margin: 5px 0 0;
+    color: #757c8b;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.heading-icon {
+    display: grid;
+    flex: 0 0 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 11px;
+    background: #667eea;
+    color: white;
+    font-size: 24px;
+}
+
+.rider-form {
+    display: grid;
+    gap: 18px;
+}
+
+.rider-form-field {
+    display: grid;
+    gap: 7px;
+    color: #363b49;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rider-form-field small {
+    color: #9298a5;
+    font-weight: 400;
+}
+
+.rider-form-field > input,
+.rider-edit-modal input[type="date"] {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #d7dae4;
+    border-radius: 9px;
+    background: white;
+    color: #282d39;
+    font: inherit;
+}
+
+.rider-form-field > input:focus,
+.rider-edit-modal input[type="date"]:focus {
+    outline: 3px solid rgba(102, 126, 234, .14);
+    border-color: #667eea;
+}
+
+.color-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 7px 12px;
+    border: 1px solid #d7dae4;
+    border-radius: 9px;
+    background: #fafbfc;
+    color: #737a89;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.color-control input[type="color"] {
+    width: 42px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.availability-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    gap: 10px;
+}
+
+.date-separator {
+    padding-bottom: 13px;
+    color: #9ca2ae;
+}
+
+.form-hint {
+    margin: -6px 0 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f4f5ff;
+    color: #646c82;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.rider-form-message {
+    min-height: 18px;
+    margin: -4px 0;
+    font-size: 13px;
+}
+
+.rider-form-message.error { color: #c43d3d; }
+.rider-form-message.success { color: #218653; }
+
+.rider-submit {
+    width: 100%;
+    min-height: 46px;
+    font-weight: 700;
+}
+
+.directory-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.directory-count {
+    display: grid;
+    min-width: 36px;
+    height: 36px;
+    place-items: center;
+    border-radius: 50%;
+    background: #eef0ff;
+    color: #4d59a4;
+    font-weight: 800;
+}
+
+.rider-card-list {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rider-card {
+    padding: 16px;
+    border: 1px solid #e4e7ed;
+    border-left: 4px solid var(--rider-color, #667eea);
+    border-radius: 12px;
+    background: white;
+    transition: transform .18s, box-shadow .18s;
+}
+
+.rider-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 18px rgba(35, 42, 70, .08);
+}
+
+.rider-main-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.rider-info {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 11px;
+}
+
+.rider-avatar {
+    display: grid;
+    flex: 0 0 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--rider-color, #667eea);
+    color: white;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.rider-identity {
+    display: grid;
+    justify-items: start;
+    gap: 5px;
+}
+
+.rider-name {
+    overflow: hidden;
+    max-width: 220px;
+    color: #292e3b;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rider-status {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.status-active { background: #e7f8ef; color: #21764a; }
+.status-ended { background: #f4f4f6; color: #717682; }
+.status-upcoming { background: #fff4da; color: #8c6711; }
+
+.rider-color-indicator {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: 0 0 0 1px #d6d9e1;
+    cursor: pointer;
+}
+
+.rider-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.edit-btn,
+.delete-btn {
+    min-height: 36px;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+}
+
+.edit-btn {
+    padding: 8px 11px;
+    background: #f0f2f8;
+    color: #4c5362;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.delete-btn {
+    display: grid;
+    width: 36px;
+    place-items: center;
+    background: transparent;
+    color: #9aa0ad;
+    font-size: 20px;
+}
+
+.edit-btn:hover { background: #e6e9f2; }
+.delete-btn:hover { background: #fff0f0; color: #c94040; }
+
+.rider-dates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid #eef0f4;
+}
+
+.rider-date-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border-radius: 7px;
+    background: #f7f8fa;
+    color: #737987;
+    font-size: 11px;
+}
+
+.rider-date-item strong { color: #444a58; }
+.rider-always-active { font-style: italic; }
+
+.rider-empty-state {
+    display: grid;
+    justify-items: center;
+    gap: 5px;
+    padding: 46px 20px;
+    border: 1px dashed #d9dce5;
+    border-radius: 12px;
+    color: #7c8290;
+    text-align: center;
+}
+
+.rider-empty-state > span { font-size: 34px; }
+.rider-empty-state p { margin: 0; font-size: 13px; }
+
+.modal-content.rider-edit-modal {
+    max-width: 480px;
+}
+
+.rider-edit-modal .close-edit {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    background: transparent;
+    color: #8b919e;
+    cursor: pointer;
+    font-size: 28px;
+}
+
+.rider-edit-modal .form-group {
+    display: grid;
+    gap: 7px;
+    margin-top: 18px;
+}
+
+.rider-edit-modal .btn-clear {
+    justify-self: start;
+    border: 0;
+    background: transparent;
+    color: #667eea;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+@media (max-width: 800px) {
+    .container.rider-management-layout {
+        grid-template-columns: 1fr;
+        padding: 0;
+    }
+
+    .rider-form-card { position: static; }
+}
+
+@media (max-width: 560px) {
+    .rider-management-page { padding: 10px; }
+
+    .rider-page-nav {
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .rider-page-nav .btn { padding: 9px 12px; font-size: 12px; }
+    .rider-form-card, .rider-directory { padding: 17px; }
+    .availability-fields { grid-template-columns: 1fr; }
+    .date-separator { display: none; }
+    .rider-main-info { align-items: flex-start; }
+    .rider-actions { align-self: flex-start; }
+    .edit-btn { font-size: 0; width: 36px; padding: 0; }
+    .edit-btn::before { content: '📅'; font-size: 15px; }
+    .rider-color-indicator { display: none; }
+    .rider-name { max-width: 120px; }
+}
+
 /* ===== BASE ===== */
 body {
     font-family: Arial, sans-serif;
