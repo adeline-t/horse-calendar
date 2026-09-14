@@ -135,3 +135,49 @@ def remove_assignment(date, assignment_index):
     except Exception as e:
         print(f"Error in remove_assignment: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@assignments_bp.route('/<date>/<int:assignment_index>', methods=['PUT'])
+def update_assignment(date, assignment_index):
+    """Update an assignment by index."""
+    try:
+        data = request.get_json() or {}
+        rider = (data.get('rider') or '').strip()
+        work_type = (data.get('work_type') or '').strip()
+        comment = (data.get('comment') or '').strip()
+
+        if not work_type:
+            return jsonify({'error': 'Le type de travail est requis'}), 400
+
+        assignments = DataService.read_assignments()
+        if date not in assignments or 'assignments' not in assignments[date]:
+            return jsonify({'error': 'Aucune activité pour cette date'}), 400
+
+        day_assignments = assignments[date]['assignments']
+        if assignment_index < 0 or assignment_index >= len(day_assignments):
+            return jsonify({'error': 'Index invalide'}), 400
+
+        for index, assignment in enumerate(day_assignments):
+            if index == assignment_index:
+                continue
+            if (
+                (assignment.get('rider') or '') == rider
+                and assignment.get('work_type') == work_type
+                and (assignment.get('comment') or '').strip() == comment
+            ):
+                return jsonify({'error': 'Cette activité existe déjà'}), 400
+
+        day_assignments[assignment_index] = {
+            'rider': rider or None,
+            'work_type': work_type,
+            'comment': comment
+        }
+
+        if not DataService.write_assignments(assignments):
+            return jsonify({'error': 'Erreur lors de la sauvegarde'}), 500
+
+        print(f"Updated assignment at index {assignment_index} for {date}")
+        return jsonify({'success': True, 'assignments': assignments})
+    except Exception as e:
+        print(f"Error in update_assignment: {e}")
+        return jsonify({'error': str(e)}), 500

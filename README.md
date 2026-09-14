@@ -69,6 +69,7 @@ These files are created automatically on first launch if they do not exist. The 
 | `GET` | `/api/assignments` | Returns the complete schedule |
 | `POST` | `/api/assignments` | Replaces all assignments for a date |
 | `POST` | `/api/assignments/<date>` | Adds an assignment to a date |
+| `PUT` | `/api/assignments/<date>/<index>` | Updates an assignment |
 | `DELETE` | `/api/assignments/<date>/<index>` | Deletes an assignment |
 | `GET` | `/api/stats?month=MM&year=YYYY` | Returns statistics |
 

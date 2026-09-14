@@ -1650,6 +1650,64 @@ section h4 {
     transform: scale(1.2);
 }
 
+.assignment-card-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+}
+
+.assignment-card .edit-assignment-btn {
+    min-height: 32px;
+    padding: 6px 9px;
+    border: 0;
+    border-radius: 7px;
+    background: #eef0ff;
+    color: #4c579b;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.assignment-card .edit-assignment-btn:hover {
+    background: #dfe3ff;
+}
+
+.assignment-card .assignment-card-actions .remove-icon {
+    position: static;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #8a91a0;
+}
+
+.assignment-submit-row {
+    position: sticky;
+    z-index: 8;
+    bottom: -32px;
+    display: flex;
+    gap: 8px;
+    margin: 20px -32px -32px;
+    padding: 14px 32px;
+    border-top: 1px solid #e3e6ee;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 -8px 20px rgba(35, 42, 70, .08);
+    backdrop-filter: blur(8px);
+}
+
+.assignment-submit-row .assignment-submit {
+    flex: 1;
+}
+
 /* Sélecteur de type de travail */
 .work-type-selector {
     display: flex;
@@ -1869,6 +1927,11 @@ section h4 {
     }
     .assignment-modal-header .modal-title {
         font-size: 1.25rem;
+    }
+    .assignment-submit-row {
+        bottom: -20px;
+        margin: 18px -15px -20px;
+        padding: 12px 15px;
     }
     .btn-primary, .btn-secondary {
         width: 100%;

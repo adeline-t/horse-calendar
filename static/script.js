@@ -4,8 +4,9 @@ let selectedDate = null;
 let allAssignments = {};
 let allRiders = [];
 let colorByName = new Map();
-let selectedAssignmentRider = null;
+let selectedAssignmentRider = '__none__';
 let selectedAssignmentWorkType = null;
+let editingAssignmentIndex = null;
 
 // ===== INITIALISATION =====
 function initializeWorkTypeButtons() {
@@ -58,7 +59,9 @@ function setupEventListeners() {
     });
 
     const addAssignmentBtn = document.getElementById('addAssignmentBtn');
+    const cancelAssignmentEditBtn = document.getElementById('cancelAssignmentEditBtn');
     if (addAssignmentBtn) addAssignmentBtn.addEventListener('click', addAssignment);
+    if (cancelAssignmentEditBtn) cancelAssignmentEditBtn.addEventListener('click', resetAssignmentForm);
 
     window.addEventListener('resize', debounce(() => {
         renderCalendar();
@@ -111,6 +114,11 @@ function getAssignmentRiderLabel(assignment) {
 
 function getAssignmentColor(assignment) {
     return assignment.rider ? getRiderColor(assignment.rider) : '#9aa0ad';
+}
+
+function getAssignmentCalendarLabel(assignment) {
+    const workType = `${getWorkTypeIcon(assignment.work_type)} ${getWorkTypeLabel(assignment.work_type)}`;
+    return assignment.rider ? `${assignment.rider} ${workType}` : workType;
 }
 
 function escapeHtml(value) {
@@ -239,8 +247,8 @@ function createDayElement(day, isOtherMonth, year, month, container) {
 
                 const assignmentText = document.createElement('span');
                 const riderLabel = getAssignmentRiderLabel(assignment);
-                assignmentText.textContent = `${riderLabel} ${getWorkTypeIcon(assignment.work_type)}`;
-                assignmentText.title = [riderLabel, getWorkTypeLabel(assignment.work_type), assignment.comment]
+                assignmentText.textContent = getAssignmentCalendarLabel(assignment);
+                assignmentText.title = [assignment.rider, getWorkTypeLabel(assignment.work_type), assignment.comment]
                     .filter(Boolean)
                     .join(' · ');
                 badge.appendChild(assignmentText);
@@ -317,7 +325,11 @@ function renderMobileList() {
                     const assignmentDiv = document.createElement('div');
                     assignmentDiv.className = 'list-assignment';
                     assignmentDiv.style.borderLeft = '4px solid ' + getAssignmentColor(assignment);
-                    assignmentDiv.innerHTML = `<strong>${escapeHtml(getAssignmentRiderLabel(assignment))}</strong> ${getWorkTypeIcon(assignment.work_type)} ${getWorkTypeLabel(assignment.work_type)}`;
+                    if (assignment.rider) {
+                        assignmentDiv.innerHTML = `<strong>${escapeHtml(assignment.rider)}</strong> ${getWorkTypeIcon(assignment.work_type)} ${getWorkTypeLabel(assignment.work_type)}`;
+                    } else {
+                        assignmentDiv.textContent = getAssignmentCalendarLabel(assignment);
+                    }
                     detailsCol.appendChild(assignmentDiv);
 
                     if (assignment.comment) {
@@ -372,7 +384,8 @@ async function populateAssignmentRiders() {
     const noRiderButton = document.createElement('button');
     noRiderButton.type = 'button';
     noRiderButton.className = 'assignment-choice rider-choice no-rider-choice';
-    noRiderButton.setAttribute('aria-pressed', 'false');
+    noRiderButton.classList.add('selected');
+    noRiderButton.setAttribute('aria-pressed', 'true');
     noRiderButton.dataset.value = '__none__';
     noRiderButton.innerHTML = '<span aria-hidden="true">—</span><span>Sans cavalier</span>';
     noRiderButton.addEventListener('click', () => selectAssignmentChoice(
@@ -427,15 +440,54 @@ function selectAssignmentChoice(container, button, choiceType) {
 function resetAssignmentForm() {
     const comment = document.getElementById('assignmentComment');
     const message = document.getElementById('assignmentFormMessage');
+    const title = document.getElementById('assignmentComposerTitle');
+    const submitButton = document.getElementById('addAssignmentBtn');
+    const cancelButton = document.getElementById('cancelAssignmentEditBtn');
 
-    selectedAssignmentRider = null;
+    editingAssignmentIndex = null;
+    selectedAssignmentRider = '__none__';
     selectedAssignmentWorkType = null;
     document.querySelectorAll('.assignment-choice.selected').forEach(button => {
         button.classList.remove('selected');
         button.setAttribute('aria-pressed', 'false');
     });
+    const noRiderButton = document.querySelector('.no-rider-choice');
+    if (noRiderButton) {
+        noRiderButton.classList.add('selected');
+        noRiderButton.setAttribute('aria-pressed', 'true');
+    }
     if (comment) comment.value = '';
     if (message) message.textContent = '';
+    if (title) title.textContent = 'Nouvelle activité';
+    if (submitButton) submitButton.textContent = 'Ajouter l’activité';
+    if (cancelButton) cancelButton.hidden = true;
+}
+
+function startEditingAssignment(index) {
+    const assignment = allAssignments[selectedDate]?.assignments?.[index];
+    if (!assignment) return;
+
+    editingAssignmentIndex = index;
+    selectedAssignmentRider = assignment.rider || '__none__';
+    selectedAssignmentWorkType = assignment.work_type;
+
+    document.querySelectorAll('#assignmentRiderButtons .assignment-choice').forEach(button => {
+        const selected = button.dataset.value === selectedAssignmentRider;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+    document.querySelectorAll('#assignmentWorkTypeButtons .assignment-choice').forEach(button => {
+        const selected = button.dataset.value === selectedAssignmentWorkType;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
+
+    document.getElementById('assignmentComment').value = assignment.comment || '';
+    document.getElementById('assignmentComposerTitle').textContent = 'Modifier l’activité';
+    document.getElementById('addAssignmentBtn').textContent = 'Enregistrer les modifications';
+    document.getElementById('cancelAssignmentEditBtn').hidden = false;
+    document.getElementById('assignmentFormMessage').textContent = '';
+    document.querySelector('.assignment-composer').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 async function addAssignment() {
@@ -446,15 +498,19 @@ async function addAssignment() {
     const workType = selectedAssignmentWorkType;
     const comment = commentInput?.value.trim() || '';
 
-    if (selectedAssignmentRider === null || !workType) {
-        if (message) message.textContent = 'Choisissez un cavalier, ou « Sans cavalier », et un type de travail.';
+    if (!workType) {
+        if (message) message.textContent = 'Choisissez un type de travail.';
         return;
     }
 
     showLoading();
     try {
-        const response = await fetch(`${API_URL}/assignments/${selectedDate}`, {
-            method: 'POST',
+        const isEditing = editingAssignmentIndex !== null;
+        const endpoint = isEditing
+            ? `${API_URL}/assignments/${selectedDate}/${editingAssignmentIndex}`
+            : `${API_URL}/assignments/${selectedDate}`;
+        const response = await fetch(endpoint, {
+            method: isEditing ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ rider, work_type: workType, comment })
         });
@@ -469,8 +525,8 @@ async function addAssignment() {
         displayAssignments();
         renderCalendar();
         resetAssignmentForm();
-        await populateAssignmentRiders();
-        showToast('✅ Activité ajoutée');
+        closeModal();
+        showToast(isEditing ? '✅ Activité modifiée' : '✅ Activité ajoutée');
     } catch (error) {
         console.error('Error adding assignment:', error);
         if (message) message.textContent = 'Erreur de connexion.';
@@ -519,9 +575,9 @@ function displayAssignments() {
                 <span aria-hidden="true">${getWorkTypeIcon(assignment.work_type)}</span>
                 ${getWorkTypeLabel(assignment.work_type)}
             </div>
-            <p class="assignment-comment ${assignment.comment ? '' : 'is-empty'}">
-                ${escapeHtml(assignment.comment || 'Aucun commentaire')}
-            </p>`;
+            ${assignment.comment
+                ? `<p class="assignment-comment">${escapeHtml(assignment.comment)}</p>`
+                : ''}`;
         item.appendChild(assignmentContent);
 
         const removeIcon = document.createElement('button');
@@ -530,7 +586,18 @@ function displayAssignments() {
         removeIcon.setAttribute('aria-label', `Retirer ${riderLabel} - ${getWorkTypeLabel(assignment.work_type)}`);
         removeIcon.textContent = '×';
         removeIcon.onclick = () => removeAssignment(selectedDate, index);
-        item.appendChild(removeIcon);
+        const editButton = document.createElement('button');
+        editButton.className = 'edit-assignment-btn';
+        editButton.type = 'button';
+        editButton.textContent = 'Modifier';
+        editButton.setAttribute('aria-label', `Modifier ${riderLabel} - ${getWorkTypeLabel(assignment.work_type)}`);
+        editButton.onclick = () => startEditingAssignment(index);
+
+        const actions = document.createElement('div');
+        actions.className = 'assignment-card-actions';
+        actions.appendChild(editButton);
+        actions.appendChild(removeIcon);
+        item.appendChild(actions);
 
         container.appendChild(item);
     });
@@ -575,6 +642,7 @@ async function removeAssignment(date, index) {
             allAssignments = data.assignments;
             if (selectedDate === date) {
                 displayAssignments();
+                if (editingAssignmentIndex === index) resetAssignmentForm();
             }
             renderCalendar();
             showToast('✅ Activité retirée');
