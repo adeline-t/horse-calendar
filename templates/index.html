@@ -68,13 +68,6 @@
                 </h4>
                 <select id="workTypeSelect" class="work-type-select" aria-label="Type de travail">
                     <option value="">-- Non spécifié --</option>
-                    <option value="longe">💫 Longe</option>
-                    <option value="liberte">🐎 Liberté</option>
-                    <option value="repos">💤 Repos</option>
-                    <option value="plat">🎠 Dressage</option>
-                    <option value="cso">🚧 CSO</option>
-                    <option value="balade">🌳 Balade</option>
-                    <option value="tap">🥕 TAP</option>
                 </select>
             </section>
 
@@ -143,6 +136,8 @@
     <!-- Toast notifications -->
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='workTypes.js') }}"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

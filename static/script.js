@@ -6,8 +6,21 @@ let allCavaliers = [];
 let colorByName = new Map();
 
 // ===== INITIALISATION =====
+function initializeWorkTypeSelect() {
+    const select = document.getElementById('workTypeSelect');
+    
+    // Ajouter chaque type de travail
+    Object.entries(WORK_TYPES).forEach(([key, value]) => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = `${value.icon} ${value.label}`;
+        select.appendChild(option);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
+    initializeWorkTypeSelect();
     setupEventListeners();
     loadData();
 });
@@ -110,31 +123,8 @@ function getCavalierColor(name) {
     return colorByName.get(name) || '#667eea';
 }
 
-function getWorkTypeIcon(workType) {
-    const icons = {
-        'longe': '💫',
-        'liberte': '🐎',
-        'repos': '💤',
-        'plat': '🎠',
-        'cso': '🚧',
-        'balade': '🌳',
-        'tap': '🥕'
-    };
-    return icons[workType] || '';
-}
-
-function getWorkTypeLabel(workType) {
-    const labels = {
-        'longe': 'Longe',
-        'liberte': 'Liberté',
-        'repos': 'Repos',
-        'plat': 'Dressage',
-        'cso': 'CSO',
-        'balade': 'Balade',
-        'tap': 'TAP'
-    };
-    return labels[workType] || workType;
-}
+// Types de travail importés depuis workTypes.js
+// (les fonctions getWorkTypeIcon et getWorkTypeLabel sont définies dans workTypes.js)
 
 function getDayName(dayIndex) {
     const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -688,10 +678,14 @@ function hideLoading() {
     if (loader) loader.style.display = 'none';
 }
 
+// ===== DEBOUNCE =====
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
-        const later = () => { clearTimeout(timeout); func(...args); };
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };

@@ -118,26 +118,6 @@ function displayWorkTypeStats(stats) {
         return;
     }
 
-    const workTypeIcons = {
-        'longe': '🔄',
-        'liberte': '🦋',
-        'repos': '😴',
-        'plat': '🏇',
-        'cso': '🚧',
-        'balade': '🌳',
-        'tap': '🎯'
-    };
-
-    const workTypeLabels = {
-        'longe': 'Longe',
-        'liberte': 'Liberté',
-        'repos': 'Repos',
-        'plat': 'Plat',
-        'cso': 'CSO',
-        'balade': 'Balade',
-        'tap': 'TAP'
-    };
-
     // Trier par nombre décroissant
     const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]);
 
@@ -149,11 +129,11 @@ function displayWorkTypeStats(stats) {
         left.className = 'stat-item-left';
 
         const icon = document.createElement('span');
-        icon.textContent = workTypeIcons[workType] || '📝';
+        icon.textContent = getWorkTypeIcon(workType);
         icon.style.fontSize = '24px';
 
         const name = document.createElement('span');
-        name.textContent = workTypeLabels[workType] || workType;
+        name.textContent = getWorkTypeLabel(workType);
         name.style.fontSize = '16px';
         name.style.fontWeight = 'bold';
         name.style.marginLeft = '10px';
