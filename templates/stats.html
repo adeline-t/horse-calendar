@@ -6,37 +6,65 @@
     <title>Statistiques</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <nav>
-        <h1>📊 Statistiques des Séances</h1>
-        <a href="/" class="btn">Retour au planning</a>
+<body class="stats-page">
+    <nav class="stats-page-nav">
+        <div>
+            <p class="page-eyebrow">Planning</p>
+            <h1>Statistiques</h1>
+        </div>
+        <a href="/" class="btn btn-secondary">← Retour au planning</a>
     </nav>
 
-    <div class="container">
-        <div class="stats-filters">
-            <h3>Filtrer par période</h3>
-            <select id="monthFilter">
-                <option value="">Tous les mois</option>
-            </select>
-            <select id="yearFilter">
-                <option value="">Toutes les années</option>
-            </select>
-            <button id="filterBtn" class="btn">Filtrer</button>
-            <button id="resetBtn" class="btn btn-secondary">Réinitialiser</button>
-        </div>
-
-        <div class="stats-container">
-            <div class="stats-section">
-                <h2>Séances par cavalier</h2>
-                <div id="riderStats"></div>
+    <main class="container stats-dashboard">
+        <section class="stats-toolbar" aria-labelledby="periodFilterTitle">
+            <div>
+                <p class="section-kicker">Période</p>
+                <h2 id="periodFilterTitle">Filtrer les résultats</h2>
             </div>
-
-            <div class="stats-section">
-                <h2>Types de travail</h2>
-                <div id="workTypeStats"></div>
+            <div class="stats-filter-controls">
+                <label>
+                    <span>Mois</span>
+                    <select id="monthFilter">
+                        <option value="">Tous les mois</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Année</span>
+                    <select id="yearFilter">
+                        <option value="">Toutes les années</option>
+                    </select>
+                </label>
+                <button id="filterBtn" class="btn">Afficher</button>
+                <button id="resetBtn" class="btn btn-secondary">Tout voir</button>
             </div>
+        </section>
+
+        <p id="statsPeriod" class="stats-period" aria-live="polite"></p>
+
+        <div class="stats-grid">
+            <section class="stats-panel">
+                <div class="stats-panel-heading">
+                    <span class="stats-panel-icon" aria-hidden="true">📅</span>
+                    <div>
+                        <h2>Jours planifiés par cavalier</h2>
+                        <p>Un jour est compté une seule fois par cavalier.</p>
+                    </div>
+                </div>
+                <div id="riderStats" class="stats-list"></div>
+            </section>
+
+            <section class="stats-panel">
+                <div class="stats-panel-heading">
+                    <span class="stats-panel-icon" aria-hidden="true">🏇</span>
+                    <div>
+                        <h2>Activités par type de travail</h2>
+                        <p>Chaque activité enregistrée est comptabilisée.</p>
+                    </div>
+                </div>
+                <div id="workTypeStats" class="stats-list"></div>
+            </section>
         </div>
-    </div>
+    </main>
 
     <script src="/static/workTypes.js"></script>
     <script src="{{ url_for('static', filename='stats.js') }}"></script>

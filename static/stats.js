@@ -55,10 +55,12 @@ async function loadStats() {
         if (params.length > 0) url += '?' + params.join('&');
 
         const response = await fetch(url);
+        if (!response.ok) throw new Error('Unable to load statistics');
         const data = await response.json();
 
-        displayRiderStats(data.rider_stats, data.riders_data);
-        displayWorkTypeStats(data.work_types);
+        displayRiderStats(data.rider_day_counts, data.riders_data);
+        displayWorkTypeStats(data.work_type_counts);
+        displaySelectedPeriod(month, year);
     } catch (error) {
         console.error('Erreur:', error);
         alert('Erreur de connexion au serveur');
@@ -70,16 +72,18 @@ function displayRiderStats(stats, ridersData) {
     container.innerHTML = '';
 
     if (Object.keys(stats).length === 0) {
-        container.innerHTML = '<div class="no-stats">Aucune séance enregistrée pour cette période</div>';
+        container.innerHTML = '<div class="no-stats">Aucun jour planifié pour cette période.</div>';
         return;
     }
 
-    // Trier par nombre de séances décroissant
+    // Sort by descending number of distinct assignment days.
     const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+    const maximum = sorted[0][1];
 
     sorted.forEach(([rider, count]) => {
         const item = document.createElement('div');
         item.className = 'stat-item';
+        item.style.setProperty('--stat-progress', `${(count / maximum) * 100}%`);
 
         const left = document.createElement('div');
         left.className = 'stat-item-left';
@@ -87,21 +91,20 @@ function displayRiderStats(stats, ridersData) {
         const riderData = ridersData.find(c => c.name === rider);
         const color = riderData ? riderData.color : '#667eea';
 
-        const colorDiv = document.createElement('div');
+        const colorDiv = document.createElement('span');
         colorDiv.className = 'stat-color';
         colorDiv.style.backgroundColor = color;
 
         const name = document.createElement('span');
+        name.className = 'stat-name';
         name.textContent = rider;
-        name.style.fontSize = '16px';
-        name.style.fontWeight = 'bold';
 
         left.appendChild(colorDiv);
         left.appendChild(name);
 
         const countDiv = document.createElement('div');
         countDiv.className = 'stat-count';
-        countDiv.textContent = count + ' séance' + (count > 1 ? 's' : '');
+        countDiv.innerHTML = `<strong>${count}</strong><span>jour${count > 1 ? 's' : ''}</span>`;
 
         item.appendChild(left);
         item.appendChild(countDiv);
@@ -114,39 +117,53 @@ function displayWorkTypeStats(stats) {
     container.innerHTML = '';
 
     if (Object.keys(stats).length === 0) {
-        container.innerHTML = '<div class="no-stats">Aucun type de travail enregistré pour cette période</div>';
+        container.innerHTML = '<div class="no-stats">Aucune activité enregistrée pour cette période.</div>';
         return;
     }
 
-    // Trier par nombre décroissant
+    // Sort by descending activity count.
     const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]);
+    const maximum = sorted[0][1];
 
     sorted.forEach(([workType, count]) => {
         const item = document.createElement('div');
         item.className = 'stat-item';
+        item.style.setProperty('--stat-progress', `${(count / maximum) * 100}%`);
 
         const left = document.createElement('div');
         left.className = 'stat-item-left';
 
         const icon = document.createElement('span');
+        icon.className = 'stat-work-icon';
         icon.textContent = getWorkTypeIcon(workType);
-        icon.style.fontSize = '24px';
 
         const name = document.createElement('span');
+        name.className = 'stat-name';
         name.textContent = getWorkTypeLabel(workType);
-        name.style.fontSize = '16px';
-        name.style.fontWeight = 'bold';
-        name.style.marginLeft = '10px';
 
         left.appendChild(icon);
         left.appendChild(name);
 
         const countDiv = document.createElement('div');
         countDiv.className = 'stat-count';
-        countDiv.textContent = count + ' séance' + (count > 1 ? 's' : '');
+        countDiv.innerHTML = `<strong>${count}</strong><span>activité${count > 1 ? 's' : ''}</span>`;
 
         item.appendChild(left);
         item.appendChild(countDiv);
         container.appendChild(item);
     });
+}
+
+function displaySelectedPeriod(month, year) {
+    const container = document.getElementById('statsPeriod');
+    const monthSelect = document.getElementById('monthFilter');
+
+    if (month && year) {
+        const monthLabel = monthSelect.options[monthSelect.selectedIndex].text;
+        container.textContent = `${monthLabel} ${year}`;
+    } else if (year) {
+        container.textContent = `Année ${year}`;
+    } else {
+        container.textContent = 'Toutes les périodes';
+    }
 }

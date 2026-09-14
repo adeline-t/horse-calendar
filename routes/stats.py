@@ -13,8 +13,8 @@ def get_stats():
         assignments = DataService.read_assignments()
         riders_data = DataService.read_riders()
 
-        stats = {}
-        work_types_count = {}
+        rider_days = {}
+        work_type_counts = {}
 
         for date_key, data in assignments.items():
             # Filter by month and year when both are provided.
@@ -29,14 +29,19 @@ def get_stats():
                 work_type = assignment.get('work_type', '')
 
                 if rider:
-                    stats[rider] = stats.get(rider, 0) + 1
+                    rider_days.setdefault(rider, set()).add(date_key)
 
                 if work_type:
-                    work_types_count[work_type] = work_types_count.get(work_type, 0) + 1
+                    work_type_counts[work_type] = work_type_counts.get(work_type, 0) + 1
+
+        rider_day_counts = {
+            rider: len(days)
+            for rider, days in rider_days.items()
+        }
 
         return jsonify({
-            'rider_stats': stats,
-            'work_types': work_types_count,
+            'rider_day_counts': rider_day_counts,
+            'work_type_counts': work_type_counts,
             'riders_data': riders_data
         })
     except Exception as e:
