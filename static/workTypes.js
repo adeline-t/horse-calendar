@@ -7,13 +7,21 @@ const WORK_TYPES = {
     longe:   { icon: '🔄', label: 'Longe' },
     liberte: { icon: '🐎', label: 'Liberté' },
     repos:   { icon: '💤', label: 'Repos' },
-    plat:    { icon: '🎩', label: 'Dressage' },
+    dressage:    { icon: '🎩', label: 'Dressage' },
     cso:     { icon: '🚧', label: 'CSO' },
     balade:  { icon: '🌲', label: 'Balade' },
     tap:     { icon: '👣', label: 'TAP' },
     autre: {
         icon: '❓',
         label: 'Autre'
+    },
+    essai: {
+        icon: '🧪',
+        label: 'Essai'
+    },
+    plat: {
+        icon: '🏇',
+        label: 'Plat'
     }
 };
 

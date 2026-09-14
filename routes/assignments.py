@@ -36,11 +36,11 @@ def save_assignments():
             work_type = (assignment.get('work_type') or '').strip()
             comment = (assignment.get('comment') or '').strip()
 
-            if not rider or not work_type:
+            if not work_type:
                 continue
 
             cleaned_assignments.append({
-                'rider': rider,
+                'rider': rider or None,
                 'work_type': work_type,
                 'comment': comment
             })
@@ -72,8 +72,8 @@ def add_assignment(date):
         work_type = (data.get('work_type') or '').strip()
         comment = (data.get('comment') or '').strip()
 
-        if not rider or not work_type:
-            return jsonify({'error': 'Le cavalier et le type de travail sont requis'}), 400
+        if not work_type:
+            return jsonify({'error': 'Le type de travail est requis'}), 400
 
         assignments = DataService.read_assignments()
 
@@ -83,14 +83,14 @@ def add_assignment(date):
         day_assignments = assignments[date].get('assignments', [])
         for assignment in day_assignments:
             if (
-                assignment.get('rider') == rider
+                (assignment.get('rider') or '') == rider
                 and assignment.get('work_type') == work_type
                 and (assignment.get('comment') or '').strip() == comment
             ):
                 return jsonify({'error': 'Cette activité existe déjà'}), 400
 
         day_assignments.append({
-            'rider': rider,
+            'rider': rider or None,
             'work_type': work_type,
             'comment': comment
         })
@@ -100,7 +100,7 @@ def add_assignment(date):
         if not DataService.write_assignments(assignments):
             return jsonify({'error': 'Erreur lors de la sauvegarde'}), 500
 
-        print(f"Added assignment for {date}: {rider} - {work_type}")
+        print(f"Added assignment for {date}: {rider or 'no rider'} - {work_type}")
         return jsonify({'success': True, 'assignments': assignments})
     except Exception as e:
         print(f"Error in add_assignment: {e}")

@@ -105,6 +105,14 @@ function getRiderColor(name) {
     return colorByName.get(name) || '#667eea';
 }
 
+function getAssignmentRiderLabel(assignment) {
+    return assignment.rider || 'Sans cavalier';
+}
+
+function getAssignmentColor(assignment) {
+    return assignment.rider ? getRiderColor(assignment.rider) : '#9aa0ad';
+}
+
 function escapeHtml(value) {
     const element = document.createElement('div');
     element.textContent = value || '';
@@ -227,18 +235,19 @@ function createDayElement(day, isOtherMonth, year, month, container) {
             dayAssignments.forEach((assignment, index) => {
                 const badge = document.createElement('div');
                 badge.className = 'assignment-badge';
-                badge.style.borderLeft = '4px solid ' + getRiderColor(assignment.rider);
+                badge.style.borderLeft = '4px solid ' + getAssignmentColor(assignment);
 
                 const assignmentText = document.createElement('span');
-                assignmentText.textContent = `${assignment.rider} ${getWorkTypeIcon(assignment.work_type)}`;
-                assignmentText.title = [assignment.rider, getWorkTypeLabel(assignment.work_type), assignment.comment]
+                const riderLabel = getAssignmentRiderLabel(assignment);
+                assignmentText.textContent = `${riderLabel} ${getWorkTypeIcon(assignment.work_type)}`;
+                assignmentText.title = [riderLabel, getWorkTypeLabel(assignment.work_type), assignment.comment]
                     .filter(Boolean)
                     .join(' · ');
                 badge.appendChild(assignmentText);
 
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-btn';
-                removeBtn.setAttribute('aria-label', `Retirer ${assignment.rider} - ${getWorkTypeLabel(assignment.work_type)}`);
+                removeBtn.setAttribute('aria-label', `Retirer ${riderLabel} - ${getWorkTypeLabel(assignment.work_type)}`);
                 removeBtn.textContent = '×';
                 removeBtn.onclick = function(event) {
                     event.stopPropagation();
@@ -307,8 +316,8 @@ function renderMobileList() {
                 assignments.assignments.forEach(assignment => {
                     const assignmentDiv = document.createElement('div');
                     assignmentDiv.className = 'list-assignment';
-                    assignmentDiv.style.borderLeft = '4px solid ' + getRiderColor(assignment.rider);
-                    assignmentDiv.innerHTML = `<strong>${escapeHtml(assignment.rider)}</strong> ${getWorkTypeIcon(assignment.work_type)} ${getWorkTypeLabel(assignment.work_type)}`;
+                    assignmentDiv.style.borderLeft = '4px solid ' + getAssignmentColor(assignment);
+                    assignmentDiv.innerHTML = `<strong>${escapeHtml(getAssignmentRiderLabel(assignment))}</strong> ${getWorkTypeIcon(assignment.work_type)} ${getWorkTypeLabel(assignment.work_type)}`;
                     detailsCol.appendChild(assignmentDiv);
 
                     if (assignment.comment) {
@@ -360,6 +369,19 @@ async function populateAssignmentRiders() {
     if (!container) return;
     container.innerHTML = '';
 
+    const noRiderButton = document.createElement('button');
+    noRiderButton.type = 'button';
+    noRiderButton.className = 'assignment-choice rider-choice no-rider-choice';
+    noRiderButton.setAttribute('aria-pressed', 'false');
+    noRiderButton.dataset.value = '__none__';
+    noRiderButton.innerHTML = '<span aria-hidden="true">—</span><span>Sans cavalier</span>';
+    noRiderButton.addEventListener('click', () => selectAssignmentChoice(
+        container,
+        noRiderButton,
+        'rider'
+    ));
+    container.appendChild(noRiderButton);
+
     try {
         const response = await fetch(`${API_URL}/riders/active?date=${selectedDate}`);
         if (!response.ok) throw new Error('Unable to load riders');
@@ -381,9 +403,6 @@ async function populateAssignmentRiders() {
             container.appendChild(button);
         });
 
-        if (riders.length === 0) {
-            container.innerHTML = '<p class="choice-empty">Aucun cavalier actif pour cette date.</p>';
-        }
     } catch (error) {
         console.error('Error loading riders:', error);
         showToast('❌ Erreur de chargement des cavaliers');
@@ -423,12 +442,12 @@ async function addAssignment() {
     const commentInput = document.getElementById('assignmentComment');
     const message = document.getElementById('assignmentFormMessage');
 
-    const rider = selectedAssignmentRider;
+    const rider = selectedAssignmentRider === '__none__' ? null : selectedAssignmentRider;
     const workType = selectedAssignmentWorkType;
     const comment = commentInput?.value.trim() || '';
 
-    if (!rider || !workType) {
-        if (message) message.textContent = 'Sélectionnez un cavalier et un type de travail.';
+    if (selectedAssignmentRider === null || !workType) {
+        if (message) message.textContent = 'Choisissez un cavalier, ou « Sans cavalier », et un type de travail.';
         return;
     }
 
@@ -486,14 +505,15 @@ function displayAssignments() {
     assignments.assignments.forEach((assignment, index) => {
         const item = document.createElement('div');
         item.className = 'assignment-card';
-        item.style.setProperty('--rider-color', getRiderColor(assignment.rider));
+        const riderLabel = getAssignmentRiderLabel(assignment);
+        item.style.setProperty('--rider-color', getAssignmentColor(assignment));
 
         const assignmentContent = document.createElement('div');
         assignmentContent.className = 'assignment-card-content';
         assignmentContent.innerHTML = `
             <div class="assignment-card-heading">
                 <span class="assignment-rider-dot" aria-hidden="true"></span>
-                <strong>${escapeHtml(assignment.rider)}</strong>
+                <strong>${escapeHtml(riderLabel)}</strong>
             </div>
             <div class="assignment-work-type">
                 <span aria-hidden="true">${getWorkTypeIcon(assignment.work_type)}</span>
@@ -507,7 +527,7 @@ function displayAssignments() {
         const removeIcon = document.createElement('button');
         removeIcon.className = 'remove-icon';
         removeIcon.type = 'button';
-        removeIcon.setAttribute('aria-label', `Retirer ${assignment.rider} - ${getWorkTypeLabel(assignment.work_type)}`);
+        removeIcon.setAttribute('aria-label', `Retirer ${riderLabel} - ${getWorkTypeLabel(assignment.work_type)}`);
         removeIcon.textContent = '×';
         removeIcon.onclick = () => removeAssignment(selectedDate, index);
         item.appendChild(removeIcon);

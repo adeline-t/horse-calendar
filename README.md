@@ -72,7 +72,7 @@ These files are created automatically on first launch if they do not exist. The 
 | `DELETE` | `/api/assignments/<date>/<index>` | Deletes an assignment |
 | `GET` | `/api/stats?month=MM&year=YYYY` | Returns statistics |
 
-Write requests use JSON. Each assignment contains a `rider`, a `work_type`, and a `comment`. For example:
+Write requests use JSON. Each assignment contains a `rider`, a `work_type`, and a `comment`. The `rider` may be `null` for an activity without a rider. For example:
 
 ```bash
 curl -X POST http://localhost:5000/api/assignments/2026-09-14 \

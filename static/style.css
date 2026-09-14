@@ -1448,6 +1448,20 @@ section h4 {
     background: var(--rider-color, #667eea);
 }
 
+.no-rider-choice {
+    border-left: 4px solid #9aa0ad;
+    color: #646b79;
+}
+
+.no-rider-choice > span:first-child {
+    display: grid;
+    flex: 0 0 20px;
+    height: 20px;
+    place-items: center;
+    border-radius: 50%;
+    background: #eceef2;
+}
+
 .work-type-choice {
     justify-content: center;
     text-align: center;
