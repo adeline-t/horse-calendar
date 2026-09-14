@@ -66,7 +66,7 @@
 
             <section class="assignment-list-section" aria-labelledby="assignmentListTitle">
                 <div class="section-heading-row">
-                    <h4 id="assignmentListTitle">Assignments</h4>
+                    <h4 id="assignmentListTitle">Activités</h4>
                     <span id="assignedCount" class="count-badge">0</span>
                 </div>
                 <div id="assignedRiders" class="assignment-list" aria-live="polite"></div>
@@ -76,30 +76,21 @@
                 <div class="composer-heading">
                     <span class="composer-icon" aria-hidden="true">＋</span>
                     <div>
-                        <h4 id="assignmentComposerTitle">Nouvel assignment</h4>
-                        <p>Associer un cavalier, un type de travail et un commentaire.</p>
+                        <h4 id="assignmentComposerTitle">Nouvelle activité</h4>
+                        <p>Choisissez un cavalier et un type de travail, puis ajoutez un commentaire si nécessaire.</p>
                     </div>
                 </div>
 
                 <div class="assignment-form-grid">
-                    <label class="assignment-field">
-                        <span>Cavalier</span>
-                        <select id="assignmentRiderSelect">
-                            <option value="">Sélectionner un cavalier</option>
-                        </select>
-                    </label>
+                    <fieldset class="assignment-field assignment-field-full">
+                        <legend>Cavalier</legend>
+                        <div id="assignmentRiderButtons" class="assignment-choice-grid" role="group" aria-label="Cavalier"></div>
+                    </fieldset>
 
-                    <label id="customRiderField" class="assignment-field assignment-field-full" hidden>
-                        <span>Nom du cavalier</span>
-                        <input id="assignmentCustomRider" type="text" maxlength="50" placeholder="Saisir un nom">
-                    </label>
-
-                    <label class="assignment-field">
-                        <span>Type de travail</span>
-                        <select id="assignmentWorkTypeSelect">
-                            <option value="">Sélectionner un type</option>
-                        </select>
-                    </label>
+                    <fieldset class="assignment-field assignment-field-full">
+                        <legend>Type de travail</legend>
+                        <div id="assignmentWorkTypeButtons" class="assignment-choice-grid work-type-choice-grid" role="group" aria-label="Type de travail"></div>
+                    </fieldset>
 
                     <label class="assignment-field assignment-field-full">
                         <span>Commentaire <small>(optionnel)</small></span>
@@ -109,7 +100,7 @@
 
                 <div id="assignmentFormMessage" class="assignment-form-message" role="status"></div>
                 <button id="addAssignmentBtn" class="btn btn-primary assignment-submit">
-                    Ajouter l'assignment
+                    Ajouter l'activité
                 </button>
             </section>
 

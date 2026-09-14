@@ -4,18 +4,27 @@ let selectedDate = null;
 let allAssignments = {};
 let allRiders = [];
 let colorByName = new Map();
-let selectedRiderForWorkType = null; // Pour tracker le rider en cours de sélection
+let selectedAssignmentRider = null;
+let selectedAssignmentWorkType = null;
 
 // ===== INITIALISATION =====
-function initializeWorkTypeSelect() {
-    const select = document.getElementById('assignmentWorkTypeSelect');
-    if (!select) return;
+function initializeWorkTypeButtons() {
+    const container = document.getElementById('assignmentWorkTypeButtons');
+    if (!container) return;
 
     Object.entries(WORK_TYPES).forEach(([key, value]) => {
-        const option = document.createElement('option');
-        option.value = key;
-        option.textContent = `${value.icon} ${value.label}`;
-        select.appendChild(option);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'assignment-choice work-type-choice';
+        button.setAttribute('aria-pressed', 'false');
+        button.dataset.value = key;
+        button.innerHTML = `<span aria-hidden="true">${value.icon}</span><span>${value.label}</span>`;
+        button.addEventListener('click', () => selectAssignmentChoice(
+            container,
+            button,
+            'workType'
+        ));
+        container.appendChild(button);
     });
 }
 
@@ -48,9 +57,7 @@ function setupEventListeners() {
         if (e.target === modal) closeModal();
     });
 
-    const riderSelect = document.getElementById('assignmentRiderSelect');
     const addAssignmentBtn = document.getElementById('addAssignmentBtn');
-    if (riderSelect) riderSelect.addEventListener('change', toggleCustomRiderField);
     if (addAssignmentBtn) addAssignmentBtn.addEventListener('click', addAssignment);
 
     window.addEventListener('resize', debounce(() => {
@@ -349,10 +356,9 @@ async function openModal(day, month, year) {
 }
 
 async function populateAssignmentRiders() {
-    const select = document.getElementById('assignmentRiderSelect');
-    if (!select) return;
-
-    select.innerHTML = '<option value="">Sélectionner un cavalier</option>';
+    const container = document.getElementById('assignmentRiderButtons');
+    if (!container) return;
+    container.innerHTML = '';
 
     try {
         const response = await fetch(`${API_URL}/riders/active?date=${selectedDate}`);
@@ -360,59 +366,65 @@ async function populateAssignmentRiders() {
 
         const riders = await response.json();
         riders.forEach(rider => {
-            const option = document.createElement('option');
-            option.value = rider.name;
-            option.textContent = rider.name;
-            select.appendChild(option);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'assignment-choice rider-choice';
+            button.setAttribute('aria-pressed', 'false');
+            button.dataset.value = rider.name;
+            button.style.setProperty('--rider-color', rider.color || '#667eea');
+            button.innerHTML = `<span class="rider-choice-dot" aria-hidden="true"></span><span>${escapeHtml(rider.name)}</span>`;
+            button.addEventListener('click', () => selectAssignmentChoice(
+                container,
+                button,
+                'rider'
+            ));
+            container.appendChild(button);
         });
+
+        if (riders.length === 0) {
+            container.innerHTML = '<p class="choice-empty">Aucun cavalier actif pour cette date.</p>';
+        }
     } catch (error) {
         console.error('Error loading riders:', error);
         showToast('❌ Erreur de chargement des cavaliers');
     }
 
-    const customOption = document.createElement('option');
-    customOption.value = '__custom__';
-    customOption.textContent = 'Autre cavalier…';
-    select.appendChild(customOption);
 }
 
-function toggleCustomRiderField() {
-    const select = document.getElementById('assignmentRiderSelect');
-    const field = document.getElementById('customRiderField');
-    const input = document.getElementById('assignmentCustomRider');
-    const isCustom = select?.value === '__custom__';
+function selectAssignmentChoice(container, button, choiceType) {
+    container.querySelectorAll('.assignment-choice').forEach(choice => {
+        const selected = choice === button;
+        choice.classList.toggle('selected', selected);
+        choice.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    });
 
-    if (field) field.hidden = !isCustom;
-    if (!isCustom && input) input.value = '';
-    if (isCustom && input) input.focus();
+    if (choiceType === 'rider') selectedAssignmentRider = button.dataset.value;
+    if (choiceType === 'workType') selectedAssignmentWorkType = button.dataset.value;
+
+    const message = document.getElementById('assignmentFormMessage');
+    if (message) message.textContent = '';
 }
 
 function resetAssignmentForm() {
-    const riderSelect = document.getElementById('assignmentRiderSelect');
-    const workTypeSelect = document.getElementById('assignmentWorkTypeSelect');
-    const customRider = document.getElementById('assignmentCustomRider');
     const comment = document.getElementById('assignmentComment');
     const message = document.getElementById('assignmentFormMessage');
 
-    if (riderSelect) riderSelect.value = '';
-    if (workTypeSelect) workTypeSelect.value = '';
-    if (customRider) customRider.value = '';
+    selectedAssignmentRider = null;
+    selectedAssignmentWorkType = null;
+    document.querySelectorAll('.assignment-choice.selected').forEach(button => {
+        button.classList.remove('selected');
+        button.setAttribute('aria-pressed', 'false');
+    });
     if (comment) comment.value = '';
     if (message) message.textContent = '';
-    toggleCustomRiderField();
 }
 
 async function addAssignment() {
-    const riderSelect = document.getElementById('assignmentRiderSelect');
-    const customRider = document.getElementById('assignmentCustomRider');
-    const workTypeSelect = document.getElementById('assignmentWorkTypeSelect');
     const commentInput = document.getElementById('assignmentComment');
     const message = document.getElementById('assignmentFormMessage');
 
-    const rider = riderSelect?.value === '__custom__'
-        ? customRider?.value.trim()
-        : riderSelect?.value;
-    const workType = workTypeSelect?.value;
+    const rider = selectedAssignmentRider;
+    const workType = selectedAssignmentWorkType;
     const comment = commentInput?.value.trim() || '';
 
     if (!rider || !workType) {
@@ -430,7 +442,7 @@ async function addAssignment() {
         const data = await response.json();
 
         if (!response.ok) {
-            if (message) message.textContent = data.error || 'Impossible d’ajouter cet assignment.';
+            if (message) message.textContent = data.error || 'Impossible d’ajouter cette activité.';
             return;
         }
 
@@ -439,7 +451,7 @@ async function addAssignment() {
         renderCalendar();
         resetAssignmentForm();
         await populateAssignmentRiders();
-        showToast('✅ Assignment ajouté');
+        showToast('✅ Activité ajoutée');
     } catch (error) {
         console.error('Error adding assignment:', error);
         if (message) message.textContent = 'Erreur de connexion.';
@@ -464,8 +476,8 @@ function displayAssignments() {
     if (!assignments || !assignments.assignments || assignments.assignments.length === 0) {
         container.innerHTML = `<div class="assignment-empty">
             <span aria-hidden="true">📋</span>
-            <strong>Aucun assignment</strong>
-            <p>Ajoutez le premier assignment de cette journée.</p>
+            <strong>Aucune activité</strong>
+            <p>Ajoutez la première activité de cette journée.</p>
         </div>`;
         updateAssignedCount(0);
         return;
@@ -512,8 +524,8 @@ function updateAssignedCount(count) {
     const summary = document.getElementById('assignmentSummary');
     if (summary) {
         summary.textContent = count === 0
-            ? 'Aucun assignment prévu'
-            : `${count} assignment${count > 1 ? 's' : ''} prévu${count > 1 ? 's' : ''}`;
+            ? 'Aucune activité prévue'
+            : `${count} activité${count > 1 ? 's' : ''} prévue${count > 1 ? 's' : ''}`;
     }
 }
 
@@ -522,7 +534,7 @@ async function removeAssignment(date, index) {
     showLoading();
     try {
         if (!allAssignments[date] || !Array.isArray(allAssignments[date].assignments)) {
-            showToast('⚠️ Aucune tâche pour cette date');
+            showToast('⚠️ Aucune activité pour cette date');
             return;
         }
 
@@ -545,7 +557,7 @@ async function removeAssignment(date, index) {
                 displayAssignments();
             }
             renderCalendar();
-            showToast('✅ Tâche retirée');
+            showToast('✅ Activité retirée');
         }
     } catch (error) {
         console.error('Erreur:', error);
@@ -590,7 +602,7 @@ function debounce(func, wait) {
 // ===== DÉMARRAGE DE L’APPLICATION =====
 document.addEventListener('DOMContentLoaded', async () => {
     initializeApp();
-    initializeWorkTypeSelect();
+    initializeWorkTypeButtons();
     setupEventListeners();
     await loadData();
 });

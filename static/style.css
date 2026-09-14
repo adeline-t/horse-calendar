@@ -727,9 +727,85 @@ section h4 {
 .assignment-field {
     display: grid;
     gap: 6px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
     color: #343a49;
     font-size: 13px;
     font-weight: 600;
+}
+
+.assignment-field legend {
+    margin-bottom: 6px;
+    padding: 0;
+}
+
+.assignment-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+.assignment-choice {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #d7dae3;
+    border-radius: 9px;
+    background: white;
+    color: #343a49;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    transition: border-color .18s, box-shadow .18s, background .18s;
+}
+
+.assignment-choice:hover {
+    border-color: #8f9af0;
+    background: #f7f8ff;
+}
+
+.assignment-choice.selected {
+    border-color: #667eea;
+    background: #eef0ff;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, .13);
+    color: #39458e;
+}
+
+.rider-choice {
+    border-left: 4px solid var(--rider-color, #667eea);
+}
+
+.rider-choice-dot {
+    flex: 0 0 9px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--rider-color, #667eea);
+}
+
+.work-type-choice {
+    justify-content: center;
+    text-align: center;
+}
+
+.work-type-choice > span:first-child {
+    font-size: 18px;
+}
+
+.choice-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 12px;
+    color: #7e8492;
+    font-size: 13px;
+    font-style: italic;
+    text-align: center;
 }
 
 .assignment-field-full {
